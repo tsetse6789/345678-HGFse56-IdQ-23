@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        underweight: '#3B82F6', // blue
+                        normal: '#10B981',      // green
+                        overweight: '#F59E0B',  // amber
+                        obese: '#EF4444'        // red
+                    }
+                }
+            }
+        }
+
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-md">
+        <h1 class="text-3xl font-bold text-center mb-4 text-primary">BMI Calculator</h1>
+        <p class="text-center text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Powered by Nut
+        </p>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <!-- Unit System Selector -->
+            <div class="mb-5">
+                <label class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Unit System</label>
+                <div class="flex space-x-4">
+                    <button id="metric-btn" class="flex-1 py-2 px-4 bg-primary text-white rounded-md font-medium">Metric</button>
+                    <button id="imperial-btn" class="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium">Imperial</button>
+                </div>
+            </div>
+            
+            <!-- Personal Information -->
+            <div class="mb-5">
+                <h2 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Personal Information</h2>
+                
+                <!-- Gender Selection -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Gender</label>
+                    <div class="flex space-x-4">
+                        <button id="male-btn" class="flex-1 py-2 px-4 bg-primary text-white rounded-md font-medium">Male</button>
+                        <button id="female-btn" class="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium">Female</button>
+                    </div>
+                </div>
+                
+                <!-- Age Input -->
+                <div class="mb-4">
+                    <label for="age-input" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Age (years)</label>
+                    <input type="number" id="age-input" min="2" max="120" class="w-full p-3 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Enter your age">
+                </div>
+                
+                <!-- Ethnicity Dropdown -->
+                <div class="mb-4">
+                    <label for="ethnicity-select" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Ethnicity</label>
+                    <select id="ethnicity-select" class="w-full p-3 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="general">General Population</option>
+                        <option value="asian">Asian</option>
+                        <option value="african">African/African American</option>
+                        <option value="hispanic">Hispanic/Latino</option>
+                        <option value="caucasian">Caucasian</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Physical Measurements -->
+            <div class="mb-5">
+                <h2 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Physical Measurements</h2>
+                
+                <!-- Height Input -->
+                <div class="mb-4" id="metric-height">
+                    <label for="height-cm" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Height (cm)</label>
+                    <input type="number" id="height-cm" class="w-full p-3 border text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Enter height in cm">
+                </div>
+
+                <div class="mb-4 hidden" id="imperial-height">
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Height</label>
+                    <div class="flex space-x-2">
+                        <div class="flex-1">
+                            <label for="height-ft" class="block text-gray-700 dark:text-gray-300 text-xs mb-1">Feet</label>
+                            <input type="number" id="height-ft" class="w-full p-3 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="ft">
+                        </div>
+                        <div class="flex-1">
+                            <label for="height-in" class="block text-gray-700 dark:text-gray-300 text-xs mb-1">Inches</label>
+                            <input type="number" id="height-in" class="w-full p-3 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="in">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weight Input -->
+                <div class="mb-4" id="metric-weight">
+                    <label for="weight-kg" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Weight (kg)</label>
+                    <input type="number" id="weight-kg" class="w-full p-3 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Enter weight in kg">
+                </div>
+
+                <div class="mb-4 hidden" id="imperial-weight">
+                    <label for="weight-lb" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Weight (lbs)</label>
+                    <input type="number" id="weight-lb" class="w-full p-3 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Enter weight in pounds">
+                </div>
+            </div>
+            
+            <!-- Calculate Button -->
+            <button id="calculate-btn" class="w-full py-3 bg-primary hover:bg-opacity-90 text-white font-medium rounded-md transition duration-200 flex items-center justify-center">
+                Calculate BMI
+            </button>
+            
+            <!-- Results Section (initially hidden) -->
+            <div id="result-section" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 hidden">
+                <div class="text-center">
+                    <div class="text-4xl font-bold mb-2" id="bmi-value">25.0</div>
+                    <div class="text-lg font-medium mb-4" id="bmi-category">Normal weight</div>
+                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700 dark:text-gray-300 mb-3" id="bmi-description"></p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 italic" id="group-specific-note"></p>
+                    </div>
+                </div>
+                
+                <!-- BMI Range Indicator -->
+                <div class="mt-6">
+                    <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-2" id="range-labels">
+                        <span>Underweight</span>
+                        <span>Normal</span>
+                        <span>Overweight</span>
+                        <span>Obese</span>
+                    </div>
+                    <div class="h-2 flex rounded-full overflow-hidden" id="range-bars">
+                        <div class="bg-underweight flex-1"></div>
+                        <div class="bg-normal flex-1"></div>
+                        <div class="bg-overweight flex-1"></div>
+                        <div class="bg-obese flex-1"></div>
+                    </div>
+                    <div class="relative h-4">
+                        <div id="bmi-marker" class="absolute w-3 h-3 bg-gray-800 dark:bg-white rounded-full transform -translate-x-1.5 -translate-y-1.5 transition-all duration-500" style="left: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-sm text-center mt-4 text-gray-600 dark:text-gray-400">
+            This calculator provides an adjusted BMI assessment based on your personal factors. For personalized health advice, please consult a healthcare professional.
+        </p>
+    </div>
+
+    <script>
+        // DOM Elements
+        const metricBtn = document.getElementById('metric-btn');
+        const imperialBtn = document.getElementById('imperial-btn');
+        const maleBtn = document.getElementById('male-btn');
+        const femaleBtn = document.getElementById('female-btn');
+        const metricHeight = document.getElementById('metric-height');
+        const imperialHeight = document.getElementById('imperial-height');
+        const metricWeight = document.getElementById('metric-weight');
+        const imperialWeight = document.getElementById('imperial-weight');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultSection = document.getElementById('result-section');
+        const bmiValue = document.getElementById('bmi-value');
+        const bmiCategory = document.getElementById('bmi-category');
+        const bmiDescription = document.getElementById('bmi-description');
+        const groupSpecificNote = document.getElementById('group-specific-note');
+        const bmiMarker = document.getElementById('bmi-marker');
+        const rangeLabels = document.getElementById('range-labels');
+        const rangeBars = document.getElementById('range-bars');
+
+        // Current settings
+        let isMetric = true;
+        let isMale = true;
+
+        // Event Listeners
+        metricBtn.addEventListener('click', () => switchUnitSystem(true));
+        imperialBtn.addEventListener('click', () => switchUnitSystem(false));
+        maleBtn.addEventListener('click', () => switchGender(true));
+        femaleBtn.addEventListener('click', () => switchGender(false));
+        calculateBtn.addEventListener('click', calculateBMI);
+
+        // Switch between metric and imperial units
+        function switchUnitSystem(metric) {
+            isMetric = metric;
+            
+            // Update button styles
+            if (metric) {
+                metricBtn.className = 'flex-1 py-2 px-4 bg-primary text-white rounded-md font-medium';
+                imperialBtn.className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium';
+                metricHeight.classList.remove('hidden');
+                imperialHeight.classList.add('hidden');
+                metricWeight.classList.remove('hidden');
+                imperialWeight.classList.add('hidden');
+            } else {
+                imperialBtn.className = 'flex-1 py-2 px-4 bg-primary text-white rounded-md font-medium';
+                metricBtn.className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium';
+                metricHeight.classList.add('hidden');
+                imperialHeight.classList.remove('hidden');
+                metricWeight.classList.add('hidden');
+                imperialWeight.classList.remove('hidden');
+            }
+        }
+
+        // Switch between male and female
+        function switchGender(male) {
+            isMale = male;
+            
+            // Update button styles
+            if (male) {
+                maleBtn.className = 'flex-1 py-2 px-4 bg-primary text-white rounded-md font-medium';
+                femaleBtn.className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium';
+            } else {
+                femaleBtn.className = 'flex-1 py-2 px-4 bg-primary text-white rounded-md font-medium';
+                maleBtn.className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium';
+            }
+        }
+
+        // Calculate BMI
+        function calculateBMI() {
+            let bmi;
+            let height, weight;
+            const age = parseInt(document.getElementById('age-input').value);
+            const ethnicity = document.getElementById('ethnicity-select').value;
+            
+            // Validate age
+            if (!age || age < 2 || age > 120) {
+                alert('Please enter a valid age between 2 and 120 years.');
+                return;
+            }
+            
+            if (isMetric) {
+                height = parseFloat(document.getElementById('height-cm').value) / 100; // Convert cm to m
+                weight = parseFloat(document.getElementById('weight-kg').value);
+                
+                if (!height || !weight) {
+                    alert('Please enter both height and weight values.');
+                    return;
+                }
+                
+            } else {
+                const feet = parseFloat(document.getElementById('height-ft').value) || 0;
+                const inches = parseFloat(document.getElementById('height-in').value) || 0;
+                const pounds = parseFloat(document.getElementById('weight-lb').value);
+                
+                if ((!feet && !inches) || !pounds) {
+                    alert('Please enter both height and weight values.');
+                    return;
+                }
+                
+                // Convert to metric for calculation
+                height = (feet * 12 + inches) * 0.0254; // Convert inches to meters
+                weight = pounds * 0.453592; // Convert pounds to kg
+            }
+            
+            // Calculate standard BMI
+            bmi = weight / (height * height);
+            
+            // Display result with adjustments for gender, age, and ethnicity
+            displayAdjustedResult(bmi, age, isMale, ethnicity);
+        }
+        
+        // Display BMI result with adjustments
+        function displayAdjustedResult(bmi, age, isMale, ethnicity) {
+            // Round to 1 decimal place
+            const roundedBMI = Math.round(bmi * 10) / 10;
+            
+            // Set BMI value
+            bmiValue.textContent = roundedBMI.toFixed(1);
+            
+            // Get adjusted thresholds based on demographics
+            const thresholds = getAdjustedThresholds(age, isMale, ethnicity);
+            
+            // Set category and description based on adjusted thresholds
+            let category, description, markerPosition, categoryColor, groupNote;
+            
+            if (bmi < thresholds.underweight) {
+                category = "Underweight";
+                description = "Your BMI suggests you are underweight. This might indicate insufficient calorie intake or underlying health issues.";
+                categoryColor = 'text-underweight';
+            } else if (bmi < thresholds.overweight) {
+                category = "Normal weight";
+                description = "Your BMI falls within the normal weight range. Maintain a healthy lifestyle with balanced nutrition and regular physical activity.";
+                categoryColor = 'text-normal';
+            } else if (bmi < thresholds.obese) {
+                category = "Overweight";
+                description = "Your BMI indicates you are overweight. Focus on balanced nutrition and increased physical activity.";
+                categoryColor = 'text-overweight';
+            } else {
+                category = "Obese";
+                description = "Your BMI suggests obesity. This may increase your risk for several health conditions.";
+                categoryColor = 'text-obese';
+            }
+            
+            // Add specific group notes
+            groupNote = getGroupSpecificNotes(age, isMale, ethnicity, category);
+            
+            // Calculate marker position
+            markerPosition = calculateMarkerPosition(bmi, thresholds);
+            
+            // Update the range visualization
+            updateRangeVisualization(thresholds);
+            
+            // Update UI
+            bmiCategory.textContent = category;
+            bmiCategory.className = `text-lg font-medium mb-4 ${categoryColor}`;
+            bmiDescription.textContent = description;
+            groupSpecificNote.textContent = groupNote;
+            bmiMarker.style.left = `${markerPosition}%`;
+            
+            // Show result section
+            resultSection.classList.remove('hidden');
+        }
+        
+        // Get adjusted BMI thresholds based on demographics
+        function getAdjustedThresholds(age, isMale, ethnicity) {
+            // Default thresholds
+            let thresholds = {
+                underweight: 18.5,
+                overweight: 25,
+                obese: 30
+            };
+            
+            // Adjust for ethnicity
+            if (ethnicity === 'asian') {
+                // Asian populations have different thresholds according to WHO
+                thresholds.overweight = 23;
+                thresholds.obese = 27.5;
+            }
+            
+            // Adjust for age
+            if (age < 18) {
+                // For children and teens, BMI is age and gender specific
+                // This is a simplified adjustment - in practice, pediatric BMI uses percentiles
+                thresholds.underweight -= 1;
+                thresholds.overweight -= 1;
+                thresholds.obese -= 1;
+            } else if (age > 65) {
+                // For older adults, slightly higher BMI may be beneficial
+                thresholds.underweight += 1;
+                thresholds.overweight += 1;
+            }
+            
+            // Adjust for gender
+            if (!isMale) {
+                // Women naturally have higher body fat percentage
+                // Some research suggests slight adjustments may be appropriate
+                thresholds.underweight -= 0.5;
+                thresholds.overweight += 0.5;
+            }
+            
+            return thresholds;
+        }
+        
+        // Get specific notes based on demographic group
+        function getGroupSpecificNotes(age, isMale, ethnicity, category) {
+            let note = "";
+            
+            if (ethnicity === 'asian') {
+                note = "Asian populations typically have higher health risks at lower BMI thresholds compared to other ethnic groups.";
+            } else if (ethnicity === 'african') {
+                note = "People of African descent often have higher lean muscle mass and lower body fat at the same BMI compared to other ethnic groups.";
+            } else if (ethnicity === 'hispanic') {
+                note = "Hispanic populations may have different body fat distributions that affect how BMI relates to health risks.";
+            }
+            
+            if (age < 18) {
+                note += " For children and adolescents, BMI is normally evaluated using age and gender-specific percentiles rather than fixed thresholds.";
+            } else if (age > 65) {
+                note += " For older adults, a slightly higher BMI (25-27) may be associated with better health outcomes.";
+            }
+            
+            if (!isMale && age > 50) {
+                note += " Post-menopausal women experience natural changes in body composition that may affect BMI interpretation.";
+            } else if (isMale && category === "Overweight" && age > 40) {
+                note += " Middle-aged men with slightly elevated BMI but good fitness levels may not have increased health risks.";
+            }
+            
+            return note;
+        }
+        
+        // Calculate the marker position
+        function calculateMarkerPosition(bmi, thresholds) {
+            // Create a scale where the marker spans from BMI 15 to 40
+            const minBMI = 15;
+            const maxBMI = 40;
+            const percentage = ((bmi - minBMI) / (maxBMI - minBMI)) * 100;
+            
+            // Limit marker position
+            return Math.max(2, Math.min(98, percentage));
+        }
+        
+        // Update the range visualization based on adjusted thresholds
+        function updateRangeVisualization(thresholds) {
+            // Calculate the width percentages for each range
+            const minBMI = 15;
+            const maxBMI = 40;
+            const range = maxBMI - minBMI;
+            
+            const underweightWidth = ((thresholds.underweight - minBMI) / range) * 100;
+            const normalWidth = ((thresholds.overweight - thresholds.underweight) / range) * 100;
+            const overweightWidth = ((thresholds.obese - thresholds.overweight) / range) * 100;
+            const obeseWidth = 100 - underweightWidth - normalWidth - overweightWidth;
+            
+            // Update the range bars
+            rangeBars.innerHTML = `
+                <div class="bg-underweight" style="flex: 0 0 ${underweightWidth}%"></div>
+                <div class="bg-normal" style="flex: 0 0 ${normalWidth}%"></div>
+                <div class="bg-overweight" style="flex: 0 0 ${overweightWidth}%"></div>
+                <div class="bg-obese" style="flex: 0 0 ${obeseWidth}%"></div>
+            `;
+            
+            // Update the range labels
+            rangeLabels.innerHTML = `
+                <span style="flex: 0 0 ${underweightWidth}%; text-align: left">Under</span>
+                <span style="flex: 0 0 ${normalWidth}%; text-align: center">Normal</span>
+                <span style="flex: 0 0 ${overweightWidth}%; text-align: center">Over</span>
+                <span style="flex: 0 0 ${obeseWidth}%; text-align: right">Obese</span>
+            `;
+        }
+    </script>
+</body>
+</html>
