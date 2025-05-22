@@ -1,0 +1,586 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <title>Wordle Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        correct: '#6aaa64',
+                        present: '#c9b458',
+                        absent: '#787c7e',
+                        darkBg: '#181818',
+                        darkTile: '#3a3a3c',
+                        lightTile: '#d3d6da'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Prevent zooming on iOS when typing */
+        input, button {
+            font-size: 16px;
+        }
+        
+        /* Disable callouts and highlighting on touch */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+        }
+        
+        /* Animation styles */
+        .tile { perspective: 1000px; }
+        .tile.flip { animation: flip 0.5s ease forwards; }
+        .tile.shake { animation: shake 0.5s;}
+        .tile.bounce { animation: bounce 0.3s;}
+        @keyframes flip {
+            0% { transform: rotateX(0); }
+            50% { transform: rotateX(90deg);}
+            100% { transform: rotateX(0);}
+        }
+        @keyframes shake {
+            0%,100%{transform:translateX(0);}
+            10%,30%,50%,70%,90%{transform:translateX(-5px);}
+            20%,40%,60%,80%{transform:translateX(5px);}
+        }
+        @keyframes bounce {
+            0%,100%{transform:translateY(0);}
+            50%{transform:translateY(-10px);}
+        }
+        
+        /* Active state for touch feedback */
+        .key-btn:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+            transition: transform 0.1s, opacity 0.1s;
+        }
+        
+        /* Improved touch targets for keyboard */
+        @media (max-width: 640px) {
+            .key-btn {
+                min-height: 48px;
+                min-width: 28px;
+                margin: 2px;
+                padding: 0 4px;
+            }
+            
+            .key-wide {
+                min-width: 56px;
+            }
+            
+            .toast-mobile {
+                padding: 12px 16px;
+                font-size: 16px;
+                font-weight: 500;
+            }
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-darkBg text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300">
+    <div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-md">
+        <header class="text-center mb-4 sm:mb-6">
+            <h1 class="text-3xl font-bold mb-2">Wordle</h1>
+            <p class="text-sm mb-2">Guess the 5-letter word in 6 tries</p>
+            <button id="newGameBtn" class="bg-primary hover:bg-opacity-80 text-white rounded-md px-4 py-2 font-medium shadow-md active:shadow-none transition-all">New Game</button>
+        </header>
+        
+        <div id="loadingIndicator" class="flex items-center justify-center py-4 mb-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <span class="ml-2">Loading word list...</span>
+        </div>
+        
+        <!-- Game board with placeholder content until loaded -->
+        <div id="board" class="grid grid-rows-6 gap-1.5 mb-4 sm:mb-6 mx-auto max-w-xs">
+            <!-- Board will be populated with actual game tiles -->
+        </div>
+        
+        <div id="gameStatus" class="text-center mb-4 sm:mb-6 hidden p-3 rounded-lg bg-gray-100 dark:bg-gray-800 shadow-md">
+            <p id="statusMessage" class="text-lg font-bold mb-2"></p>
+            <p id="wordReveal" class="text-md"></p>
+        </div>
+        
+        <div id="keyboard" class="grid gap-1 sm:gap-1.5 mx-auto max-w-xl">
+            <div class="flex justify-center gap-0.5 sm:gap-1.5">
+                <button data-key="Q" class="key-btn">Q</button>
+                <button data-key="W" class="key-btn">W</button>
+                <button data-key="E" class="key-btn">E</button>
+                <button data-key="R" class="key-btn">R</button>
+                <button data-key="T" class="key-btn">T</button>
+                <button data-key="Y" class="key-btn">Y</button>
+                <button data-key="U" class="key-btn">U</button>
+                <button data-key="I" class="key-btn">I</button>
+                <button data-key="O" class="key-btn">O</button>
+                <button data-key="P" class="key-btn">P</button>
+            </div>
+            <div class="flex justify-center gap-0.5 sm:gap-1.5 px-2 sm:px-4">
+                <button data-key="A" class="key-btn">A</button>
+                <button data-key="S" class="key-btn">S</button>
+                <button data-key="D" class="key-btn">D</button>
+                <button data-key="F" class="key-btn">F</button>
+                <button data-key="G" class="key-btn">G</button>
+                <button data-key="H" class="key-btn">H</button>
+                <button data-key="J" class="key-btn">J</button>
+                <button data-key="K" class="key-btn">K</button>
+                <button data-key="L" class="key-btn">L</button>
+            </div>
+            <div class="flex justify-center gap-0.5 sm:gap-1.5">
+                <button data-key="ENTER" class="key-btn key-wide px-1 text-sm sm:text-base sm:px-2 font-bold">ENTER</button>
+                <button data-key="Z" class="key-btn">Z</button>
+                <button data-key="X" class="key-btn">X</button>
+                <button data-key="C" class="key-btn">C</button>
+                <button data-key="V" class="key-btn">V</button>
+                <button data-key="B" class="key-btn">B</button>
+                <button data-key="N" class="key-btn">N</button>
+                <button data-key="M" class="key-btn">M</button>
+                <button data-key="BACKSPACE" class="key-btn key-wide px-1 text-sm sm:text-base sm:px-2 font-bold">⌫</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const WORD_LENGTH = 5;
+        const MAX_ATTEMPTS = 6;
+        let wordList = [];
+        let answerList = [];
+        let currentWord = '';
+        let currentRow = 0;
+        let currentTile = 0;
+        let isGameOver = false;
+        
+        // Built-in fallback word lists in case fetching fails
+        const fallbackWords = [
+            "ABOUT", "ABOVE", "ACTOR", "ACUTE", "ADMIT", "ADOPT", "ADORE", "ADULT", "AFTER", "AGAIN",
+            "AGENT", "AGREE", "AHEAD", "ALARM", "ALBUM", "ALERT", "ALIKE", "ALIVE", "ALLOW", "ALONE",
+            "ALONG", "ALTER", "AMAZE", "ANGER", "ANGLE", "ANGRY", "ANKLE", "APART", "APPLE", "APPLY",
+            "ARENA", "ARGUE", "ARISE", "ARMOR", "ARRAY", "ARROW", "ASSET", "AVOID", "AWARD", "AWARE",
+            "BACON", "BADGE", "BADLY", "BAKER", "BASES", "BASIC", "BASIS", "BEACH", "BEARD", "BEAST",
+            "BEGIN", "BEING", "BELOW", "BENCH", "BERRY", "BIRTH", "BLACK", "BLADE", "BLAME", "BLANK",
+            "BLAST", "BLAZE", "BLEED", "BLEND", "BLESS", "BLIND", "BLINK", "BLOCK", "BLOOD", "BLOOM",
+            "BLUES", "BLUNT", "BOARD", "BOOST", "BOOTH", "BOUND", "BRACE", "BRAIN", "BRAKE", "BRAND"
+        ];
+
+        async function fetchWordLists() {
+            try {
+                document.getElementById('loadingIndicator').classList.remove('hidden');
+                
+                // Try to fetch the word lists from the original source
+                const guessesPromise = fetch('https://raw.githubusercontent.com/tabatkins/wordle-list/main/words')
+                    .then(r => r.text());
+                
+                const answersPromise = fetch('https://raw.githubusercontent.com/tabatkins/wordle-list/main/words-answers')
+                    .then(r => r.text());
+                
+                // Set a timeout to use fallback after 5 seconds
+                const timeoutPromise = new Promise((resolve) => {
+                    setTimeout(() => resolve({timeout: true}), 5000);
+                });
+                
+                // Race against timeout for guesses
+                const guessesResult = await Promise.race([
+                    guessesPromise.then(text => ({timeout: false, text})), 
+                    timeoutPromise
+                ]);
+                
+                // Race against timeout for answers
+                const answersResult = await Promise.race([
+                    answersPromise.then(text => ({timeout: false, text})), 
+                    timeoutPromise
+                ]);
+                
+                // Process guesses result
+                if (guessesResult.timeout) {
+                    console.log("Guesses fetch timed out, using fallback");
+                    wordList = fallbackWords;
+                } else {
+                    wordList = guessesResult.text.split('\n')
+                        .map(w => w.trim().toUpperCase())
+                        .filter(w => w.length === 5);
+                        
+                    if (wordList.length === 0) {
+                        console.log("No valid words in guesses, using fallback");
+                        wordList = fallbackWords;
+                    }
+                }
+                
+                // Process answers result
+                if (answersResult.timeout) {
+                    console.log("Answers fetch timed out, using fallback");
+                    answerList = fallbackWords;
+                } else {
+                    answerList = answersResult.text.split('\n')
+                        .map(w => w.trim().toUpperCase())
+                        .filter(w => w.length === 5);
+                        
+                    if (answerList.length === 0) {
+                        console.log("No valid words in answers, using wordList");
+                        answerList = wordList;
+                    }
+                }
+                
+                return true;
+            } catch (error) {
+                console.log("Error fetching word lists:", error);
+                // Use fallback on any error
+                wordList = fallbackWords;
+                answerList = fallbackWords;
+                return false;
+            } finally {
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            }
+        }
+
+        function createBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            for (let r = 0; r < MAX_ATTEMPTS; r++) {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-5 gap-1.5';
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile h-12 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold uppercase border-2 border-lightTile dark:border-darkTile';
+                    tile.id = `tile-${r}-${c}`;
+                    // Add invisible content to maintain dimensions
+                    tile.innerHTML = '<span class="opacity-0">X</span>';
+                    row.appendChild(tile);
+                }
+                board.appendChild(row);
+            }
+        }
+
+        async function initGame() {
+            try {
+                // Create the board first
+                createBoard();
+                setupKeyboard();
+                
+                // Fetch word lists (using original GitHub lists with fallback)
+                await fetchWordLists();
+                
+                // Start new game
+                resetGame();
+                
+                // Set up event listener for new game button
+                document.getElementById('newGameBtn').addEventListener('click', resetGame);
+            } catch (error) {
+                console.log("Error during game initialization:", error);
+                // Make sure the loading indicator is hidden if there's an error
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            }
+        }
+
+        function resetGame() {
+            try {
+                currentRow = 0;
+                currentTile = 0;
+                isGameOver = false;
+                
+                // Pick a random word from the answer list
+                currentWord = answerList[Math.floor(Math.random() * answerList.length)];
+                console.log("Word to guess:", currentWord);
+
+                // Reset all tiles
+                for (let r = 0; r < MAX_ATTEMPTS; r++) {
+                    for (let c = 0; c < WORD_LENGTH; c++) {
+                        const tile = document.getElementById(`tile-${r}-${c}`);
+                        if (tile) {
+                            tile.textContent = '';
+                            tile.className = 'tile h-12 sm:h-14 flex items-center justify-center text-xl sm:text-2xl font-bold uppercase border-2 border-lightTile dark:border-darkTile';
+                        }
+                    }
+                }
+                
+                // Reset all keyboard keys
+                document.querySelectorAll('.key-btn').forEach(button => {
+                    button.className = 'key-btn bg-lightTile dark:bg-darkTile text-gray-800 dark:text-gray-200 font-bold rounded h-12 sm:h-14 flex-1 text-sm sm:text-base flex items-center justify-center uppercase';
+                    
+                    // Add the key-wide class back to the Enter and Backspace buttons
+                    if (button.getAttribute('data-key') === 'ENTER' || button.getAttribute('data-key') === 'BACKSPACE') {
+                        button.classList.add('key-wide');
+                    }
+                });
+                
+                // Hide game status
+                document.getElementById('gameStatus').classList.add('hidden');
+            } catch (error) {
+                console.log("Error during game reset:", error);
+            }
+        }
+
+        function setupKeyboard() {
+            try {
+                document.querySelectorAll('.key-btn').forEach(button => {
+                    button.className = 'key-btn bg-lightTile dark:bg-darkTile text-gray-800 dark:text-gray-200 font-bold rounded h-12 sm:h-14 flex-1 text-sm sm:text-base flex items-center justify-center uppercase';
+                    
+                    // Add the key-wide class to the Enter and Backspace buttons
+                    if (button.getAttribute('data-key') === 'ENTER' || button.getAttribute('data-key') === 'BACKSPACE') {
+                        button.classList.add('key-wide');
+                    }
+                    
+                    // Add click handler
+                    button.onclick = () => {
+                        handleKeyPress(button.getAttribute('data-key'));
+                    };
+                });
+                
+                // Add keyboard input handler
+                document.onkeydown = (e) => {
+                    if (isGameOver) return;
+                    if (e.key === 'Enter') handleKeyPress('ENTER');
+                    else if (e.key === 'Backspace') handleKeyPress('BACKSPACE');
+                    else if (/^[a-zA-Z]$/.test(e.key)) handleKeyPress(e.key.toUpperCase());
+                };
+            } catch (error) {
+                console.log("Error during keyboard setup:", error);
+            }
+        }
+
+        function handleKeyPress(key) {
+            if (isGameOver) return;
+            if (key === 'ENTER') submitGuess();
+            else if (key === 'BACKSPACE') deleteLetter();
+            else if (/^[A-Z]$/.test(key) && currentTile < WORD_LENGTH) addLetter(key);
+        }
+        
+        function addLetter(letter) {
+            try {
+                if (currentTile < WORD_LENGTH) {
+                    const tile = document.getElementById(`tile-${currentRow}-${currentTile}`);
+                    if (tile) {
+                        tile.textContent = letter;
+                        tile.classList.add('bounce');
+                        tile.classList.add('border-gray-500', 'dark:border-gray-400');
+                        setTimeout(() => tile.classList.remove('bounce'), 300);
+                        currentTile++;
+                    }
+                }
+            } catch (error) {
+                console.log("Error adding letter:", error);
+            }
+        }
+        
+        function deleteLetter() {
+            try {
+                if (currentTile > 0) {
+                    currentTile--;
+                    const tile = document.getElementById(`tile-${currentRow}-${currentTile}`);
+                    if (tile) {
+                        tile.textContent = '';
+                        tile.classList.remove('border-gray-500', 'dark:border-gray-400');
+                    }
+                }
+            } catch (error) {
+                console.log("Error deleting letter:", error);
+            }
+        }
+
+        function submitGuess() {
+            try {
+                if (currentTile < WORD_LENGTH) { 
+                    shakeRow(); 
+                    return; 
+                }
+                
+                let guessedWord = '';
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = document.getElementById(`tile-${currentRow}-${c}`);
+                    if (tile) {
+                        guessedWord += tile.textContent;
+                    }
+                }
+                
+                if (!isValidWord(guessedWord)) {
+                    showInvalidWordFeedback();
+                    return;
+                }
+                
+                const result = checkGuess(guessedWord);
+                animateResult(result);
+            } catch (error) {
+                console.log("Error submitting guess:", error);
+            }
+        }
+
+        function checkGuess(guess) {
+            const result = [];
+            const targetLetterCount = {};
+            
+            for (const letter of currentWord) {
+                targetLetterCount[letter] = (targetLetterCount[letter] || 0) + 1;
+            }
+            
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                const guessLetter = guess[i];
+                if (guessLetter === currentWord[i]) {
+                    result[i] = { letter: guessLetter, status: 'correct' };
+                    targetLetterCount[guessLetter]--;
+                } else {
+                    result[i] = { letter: guessLetter, status: 'unknown' };
+                }
+            }
+            
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                if (result[i].status === 'unknown') {
+                    const guessLetter = guess[i];
+                    if (targetLetterCount[guessLetter] && targetLetterCount[guessLetter] > 0) {
+                        result[i].status = 'present';
+                        targetLetterCount[guessLetter]--;
+                    } else {
+                        result[i].status = 'absent';
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        function animateResult(result) {
+            try {
+                const isCorrect = result.every(item => item.status === 'correct');
+                
+                for (let i = 0; i < WORD_LENGTH; i++) {
+                    const tile = document.getElementById(`tile-${currentRow}-${i}`);
+                    const keyBtn = document.querySelector(`[data-key="${result[i].letter}"]`);
+                    
+                    if (!tile) continue;
+                    
+                    setTimeout(() => {
+                        tile.classList.add('flip');
+                        
+                        setTimeout(() => {
+                            if (result[i].status === 'correct') {
+                                tile.classList.add('bg-correct','text-white','border-correct');
+                                if (keyBtn && !keyBtn.classList.contains('bg-correct')) {
+                                    keyBtn.classList.remove('bg-lightTile','dark:bg-darkTile','bg-present','bg-absent');
+                                    keyBtn.classList.add('bg-correct','text-white');
+                                }
+                            } else if (result[i].status === 'present') {
+                                tile.classList.add('bg-present','text-white','border-present');
+                                if (keyBtn && !keyBtn.classList.contains('bg-correct')) {
+                                    keyBtn.classList.remove('bg-lightTile','dark:bg-darkTile','bg-absent');
+                                    keyBtn.classList.add('bg-present','text-white');
+                                }
+                            } else {
+                                tile.classList.add('bg-absent','text-white','border-absent');
+                                if (keyBtn && !keyBtn.classList.contains('bg-correct') && !keyBtn.classList.contains('bg-present')) {
+                                    keyBtn.classList.remove('bg-lightTile','dark:bg-darkTile');
+                                    keyBtn.classList.add('bg-absent','text-white');
+                                }
+                            }
+                        }, 250);
+                    }, i * 200);
+                }
+                
+                setTimeout(() => {
+                    if (isCorrect) endGame(true);
+                    else {
+                        currentRow++;
+                        currentTile = 0;
+                        if (currentRow >= MAX_ATTEMPTS) endGame(false);
+                    }
+                }, WORD_LENGTH * 200 + 500);
+            } catch (error) {
+                console.log("Error animating result:", error);
+            }
+        }
+
+        function endGame(isWin) {
+            try {
+                isGameOver = true;
+                const gameStatus = document.getElementById('gameStatus');
+                const statusMessage = document.getElementById('statusMessage');
+                const wordReveal = document.getElementById('wordReveal');
+                
+                if (!gameStatus || !statusMessage || !wordReveal) return;
+                
+                gameStatus.classList.remove('hidden');
+                
+                if (isWin) {
+                    statusMessage.textContent = 'Congratulations!';
+                    statusMessage.className = 'text-lg font-bold mb-2 text-correct';
+                    wordReveal.textContent = `You guessed the word: ${currentWord}`;
+                } else {
+                    statusMessage.textContent = 'Game Over';
+                    statusMessage.className = 'text-lg font-bold mb-2 text-red-500';
+                    wordReveal.textContent = `The word was: ${currentWord}`;
+                }
+            } catch (error) {
+                console.log("Error ending game:", error);
+            }
+        }
+        
+        function isValidWord(word) {
+            return wordList.includes(word);
+        }
+        
+        function showInvalidWordFeedback() {
+            try {
+                let toast = document.getElementById('toast-notification');
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'toast-notification';
+                    toast.className = 'fixed top-16 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-4 py-3 rounded-md shadow-lg z-50 transition-opacity duration-300 opacity-0 toast-mobile';
+                    document.body.appendChild(toast);
+                }
+                
+                toast.textContent = 'Not in word list';
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+                
+                shakeRow();
+                
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0');
+                }, 2000);
+            } catch (error) {
+                console.log("Error showing invalid word feedback:", error);
+            }
+        }
+        
+        function shakeRow() {
+            try {
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = document.getElementById(`tile-${currentRow}-${c}`);
+                    if (tile) {
+                        tile.classList.add('shake');
+                        setTimeout(() => tile.classList.remove('shake'), 500);
+                    }
+                }
+            } catch (error) {
+                console.log("Error shaking row:", error);
+            }
+        }
+
+        // Dark mode auto
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Start game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initGame);
+        
+        // Backup initialization in case DOMContentLoaded already fired
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGame);
+        } else {
+            // DOMContentLoaded already fired
+            setTimeout(initGame, 0);
+        }
+    </script>
+
+</body></html>
