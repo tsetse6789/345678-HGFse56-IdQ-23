@@ -1,0 +1,422 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Killer Sudoku Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        :root { --color-primary: #5D5CDE; }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        .cell-input { width: 100%; height: 100%; text-align: center; font-size: 1.25rem; border: none; background: transparent; outline: none; }
+        @media (max-width: 640px) { .cell-input { font-size: 1rem; } }
+        .dark .cell-input { color: #fff; }
+        .original { font-weight: bold; color: #374151; }
+        .dark .original { color: #d1d5db; }
+        .conflict { background-color: rgba(239, 68, 68, 0.2); }
+        .cage-label { position: absolute; top: 2px; left: 4px; font-size: 0.75rem; font-weight: bold; color: #5D5CDE; pointer-events:none; }
+        .dark .cage-label { color: #a5b4fc; }
+        .selected { background-color: rgba(93, 92, 222, 0.2); }
+        .border-cage-bold { border-color: var(--color-primary) !important; }
+        .dark .border-cage-bold { border-color: #a5b4fc !important; }
+    </style>
+    <script>
+        if (!window.darkModeStylesAdded) {
+            const darkModeStyles = document.createElement('style');
+            darkModeStyles.textContent = `
+                .dark .dark\\:bg-gray-900 { background-color: #181818; }
+                .dark .dark\\:bg-gray-800 { background-color: #1f1f1f; }
+                .dark .dark\\:bg-gray-700 { background-color: #2d2d2d; }
+                .dark .dark\\:border-gray-700 { border-color: #4a4a4a; }
+                .dark .dark\\:border-gray-500 { border-color: #6b7280; }
+                .dark .dark\\:text-white { color: #ffffff; }
+                .dark .dark\\:text-green-400 { color: #4ade80; }
+                .dark .dark\\:text-red-400 { color: #f87171; }
+            `;
+            document.head.appendChild(darkModeStyles);
+            window.darkModeStylesAdded = true;
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-200">
+<div class="min-h-screen flex flex-col p-4">
+    <div class="max-w-md mx-auto w-full">
+        <h1 class="text-3xl font-bold text-center mb-4">Killer Sudoku</h1>
+        <div class="flex flex-wrap gap-2 mb-4 justify-between">
+            <div class="flex gap-2">
+                <button id="new-game-btn" class="px-3 py-2 text-white rounded-md text-sm" style="background-color: var(--color-primary);">New Game</button>
+                <select id="difficulty" class="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md text-sm">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected="">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button id="check-btn" class="px-3 py-2 bg-green-600 hover:bg-opacity-90 text-white rounded-md text-sm">Check</button>
+                <button id="solve-btn" class="px-3 py-2 bg-gray-500 hover:bg-opacity-90 text-white rounded-md text-sm">Solve</button>
+            </div>
+        </div>
+        <div id="status-message" class="my-2 text-sm h-5 text-center"></div>
+        <div id="sudoku-board" class="grid grid-cols-9 gap-0 border-2 border-gray-800 dark:border-gray-500 relative"></div>
+        <div id="number-pad" class="grid grid-cols-5 gap-2 mt-6">
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">1</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">2</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">3</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">4</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">5</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">6</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">7</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">8</button>
+            <button class="number-btn px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-bold">9</button>
+            <button id="clear-btn" class="col-span-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md font-bold">×</button>
+        </div>
+    </div>
+</div>
+<script>
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.documentElement.classList.add('dark');
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+    if (event.matches) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+});
+
+let board = Array(9).fill().map(() => Array(9).fill(0));
+let solution = Array(9).fill().map(() => Array(9).fill(0));
+let cages = [];
+let cellToCage = Array(9).fill().map(() => Array(9).fill(-1));
+let selectedCell = null;
+
+// Sudoku solver/generator
+function generateSolvedBoard() {
+    function isValid(bd, row, col, num) {
+        for (let c=0;c<9;c++) if (bd[row][c]===num) return false;
+        for (let r=0;r<9;r++) if (bd[r][col]===num) return false;
+        let br = Math.floor(row/3)*3, bc = Math.floor(col/3)*3;
+        for (let r=br;r<br+3;r++) for (let c=bc;c<bc+3;c++) if (bd[r][c]===num) return false;
+        return true;
+    }
+    function solve(bd) {
+        for (let row=0; row<9; row++) {
+            for (let col=0; col<9; col++) {
+                if (bd[row][col] === 0) {
+                    let numbers = [1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
+                    for (let num of numbers) {
+                        if (isValid(bd, row, col, num)) {
+                            bd[row][col] = num;
+                            if (solve(bd)) return true;
+                            bd[row][col] = 0;
+                        }
+                    }
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    let temp = Array(9).fill().map(()=>Array(9).fill(0));
+    solve(temp);
+    return temp;
+}
+
+// Cage generation: every cage has at least 2 cells, covers all cells, no overlaps
+function generateCages(difficulty) {
+    let minSize = 2, maxSize = 4;
+    if (difficulty === "easy") maxSize = 3;
+    if (difficulty === "hard") maxSize = 5;
+
+    let uncovered = Array(9).fill().map(()=>Array(9).fill(true));
+    cages = [];
+    cellToCage = Array(9).fill().map(()=>Array(9).fill(-1));
+    let cageId = 0;
+    function neighbors(r,c) {
+        let ns = [];
+        if (r>0 && uncovered[r-1][c]) ns.push([r-1,c]);
+        if (r<8 && uncovered[r+1][c]) ns.push([r+1,c]);
+        if (c>0 && uncovered[r][c-1]) ns.push([r,c-1]);
+        if (c<8 && uncovered[r][c+1]) ns.push([r,c+1]);
+        return ns;
+    }
+    function shuffle(arr) {
+        for (let i=arr.length-1;i>0;i--) {
+            let j = Math.floor(Math.random()*(i+1));
+            [arr[i],arr[j]]=[arr[j],arr[i]];
+        }
+    }
+    let cellsLeft = 81;
+    while (cellsLeft > 0) {
+        let start = null;
+        for (let r=0;r<9;r++) for (let c=0;c<9;c++)
+            if (uncovered[r][c]) { start=[r,c]; break; }
+        if (!start) break;
+        let cage = [start];
+        uncovered[start[0]][start[1]] = false;
+        cellsLeft--;
+        let cageSize = Math.floor(Math.random()*(maxSize-minSize+1))+minSize;
+        for (let i=1; i<cageSize; i++) {
+            let options = [];
+            for (let [r,c] of cage) options.push(...neighbors(r,c));
+            options = options.filter(([rr,cc])=>uncovered[rr][cc]);
+            shuffle(options);
+            if (options.length === 0) break;
+            let [nr,nc] = options[0];
+            cage.push([nr,nc]);
+            uncovered[nr][nc]=false;
+            cellsLeft--;
+        }
+        for (let [r,c] of cage) cellToCage[r][c]=cageId;
+        cages.push({ id: cageId, cells: cage, sum: 0 });
+        cageId++;
+    }
+}
+
+// Assign cage sums from the solution
+function assignCageSums(sol) {
+    for (let cage of cages) {
+        cage.sum = cage.cells.reduce((a,[r,c])=>a+sol[r][c],0);
+    }
+}
+
+// --- UI ---
+function createBoard() {
+    const boardElement = document.getElementById('sudoku-board');
+    boardElement.innerHTML = '';
+    for (let row=0; row<9; row++) {
+        for (let col=0; col<9; col++) {
+            const wrap = document.createElement('div');
+            wrap.classList.add('relative','w-full','h-12','sm:h-14','flex','items-center','justify-center','bg-white','dark:bg-gray-800','overflow-visible');
+            if (row%3===2&&row<8) wrap.classList.add('border-b-2','border-gray-800','dark:border-gray-500');
+            if (col%3===2&&col<8) wrap.classList.add('border-r-2','border-gray-800','dark:border-gray-500');
+            if (row<8) wrap.classList.add('border-b','border-gray-300','dark:border-gray-700');
+            if (col<8) wrap.classList.add('border-r','border-gray-300','dark:border-gray-700');
+            wrap.dataset.row = row;
+            wrap.dataset.col = col;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = 1;
+            input.max = 9;
+            input.classList.add('cell-input');
+            input.dataset.row = row;
+            input.dataset.col = col;
+
+            input.addEventListener('input', (e) => updateBoardFromInput(e.target));
+            input.addEventListener('focus', (e) => highlightCell(e.target));
+            input.addEventListener('blur', removeHighlights);
+            input.addEventListener('click', (e) => {
+                selectedCell = e.target;
+                highlightCell(e.target);
+            });
+
+            wrap.appendChild(input);
+            boardElement.appendChild(wrap);
+        }
+    }
+}
+
+function renderCages() {
+    // Remove all previous cage borders/labels
+    document.querySelectorAll('#sudoku-board > div').forEach(cell=>{
+        cell.style.borderTop = '';
+        cell.style.borderLeft = '';
+        cell.style.borderRight = '';
+        cell.style.borderBottom = '';
+        cell.classList.remove('border-cage-bold');
+    });
+    document.querySelectorAll('.cage-label').forEach(el=>el.remove());
+
+    // For each cell, decide if it needs a cage border (top/left)
+    for (let row=0; row<9; row++) {
+        for (let col=0; col<9; col++) {
+            const cellDiv = document.querySelectorAll('#sudoku-board > div')[row*9+col];
+            const myCage = cellToCage[row][col];
+
+            // If at the top or above cell is different cage, draw top border
+            if (row === 0 || cellToCage[row-1][col] !== myCage) {
+                cellDiv.style.borderTop = '4px solid var(--color-primary)';
+                cellDiv.classList.add('border-cage-bold');
+            }
+            // If at the left or left cell is different cage, draw left border
+            if (col === 0 || cellToCage[row][col-1] !== myCage) {
+                cellDiv.style.borderLeft = '4px solid var(--color-primary)';
+                cellDiv.classList.add('border-cage-bold');
+            }
+            // For the far right/bottom edges, keep the box border
+            if (col === 8) cellDiv.style.borderRight = '';
+            if (row === 8) cellDiv.style.borderBottom = '';
+        }
+    }
+
+    // Cage sum label at top-left cell of each cage
+    for (let cage of cages) {
+        let [minr, minc] = cage.cells.reduce(([rr,cc],[r,c])=>{
+            if (r<rr || (r===rr && c<cc)) return [r,c];
+            return [rr,cc];
+        }, [9,9]);
+        let idx = minr*9+minc;
+        let cellDiv = document.querySelectorAll('#sudoku-board > div')[idx];
+        let label = document.createElement('div');
+        label.className = 'cage-label';
+        label.textContent = cage.sum;
+        cellDiv.appendChild(label);
+    }
+}
+
+function updateBoardUI() {
+    let cells = document.querySelectorAll('.cell-input');
+    cells.forEach(cell=>{
+        let row = parseInt(cell.dataset.row), col = parseInt(cell.dataset.col);
+        cell.value = board[row][col] === 0 ? '' : board[row][col];
+        cell.readOnly = false;
+        cell.classList.remove('original');
+    });
+    removeHighlights();
+    highlightConflicts();
+}
+
+function updateBoardFromInput(input) {
+    let row = parseInt(input.dataset.row), col = parseInt(input.dataset.col);
+    let value = input.value === '' ? 0 : parseInt(input.value);
+    if (value < 0 || value > 9) { input.value = ''; return; }
+    board[row][col] = value;
+    highlightConflicts();
+    highlightCell(input);
+    checkCompletion();
+}
+
+function highlightCell(input) {
+    removeHighlights();
+    let row = parseInt(input.dataset.row), col = parseInt(input.dataset.col);
+    input.parentElement.classList.add('selected');
+    let cageId = cellToCage[row][col];
+    if (cageId !== -1) {
+        for (let [r,c] of cages[cageId].cells) {
+            if (!(r===row && c===col)) document.querySelectorAll('.cell-input')[r*9+c].parentElement.classList.add('selected');
+        }
+    }
+}
+function removeHighlights() {
+    document.querySelectorAll('.cell-input').forEach(cell=>{
+        cell.parentElement.classList.remove('selected');
+    });
+}
+function highlightConflicts() {
+    document.querySelectorAll('.cell-input').forEach(cell=>cell.parentElement.classList.remove('conflict'));
+    for (let row=0; row<9; row++) for (let col=0; col<9; col++) {
+        let val = board[row][col];
+        if (!val) continue;
+        for (let k=0; k<9; k++) {
+            if (k!==col && board[row][k]===val) markConflict(row,col), markConflict(row,k);
+            if (k!==row && board[k][col]===val) markConflict(row,col), markConflict(k,col);
+        }
+        let br=Math.floor(row/3)*3, bc=Math.floor(col/3)*3;
+        for (let r=br;r<br+3;r++) for (let c=bc;c<bc+3;c++)
+            if ((r!==row||c!==col)&&board[r][c]===val) markConflict(row,col), markConflict(r,c);
+    }
+    for (let cage of cages) {
+        let seen = {};
+        let sum = 0, filled = 0;
+        for (let [r,c] of cage.cells) {
+            let v = board[r][c];
+            if (v) {
+                if (seen[v]) { markConflict(r,c); markConflict(seen[v][0],seen[v][1]); }
+                seen[v]=[r,c];
+                sum+=v; filled++;
+            }
+        }
+        if (filled === cage.cells.length && sum !== cage.sum) {
+            for (let [r,c] of cage.cells) markConflict(r,c);
+        }
+    }
+    function markConflict(r,c) {
+        document.querySelectorAll('.cell-input')[r*9+c].parentElement.classList.add('conflict');
+    }
+}
+function checkCompletion() {
+    for (let row=0; row<9; row++)
+        for (let col=0; col<9; col++)
+            if (board[row][col]===0) return false;
+    for (let cell of document.querySelectorAll('.cell-input')) if (cell.parentElement.classList.contains('conflict')) return false;
+    let status = document.getElementById('status-message');
+    status.textContent = "Puzzle complete! 🎉";
+    status.className = "my-2 text-sm h-5 text-center text-green-600 dark:text-green-400 font-bold";
+    return true;
+}
+function checkSolution() {
+    let incorrect=0, empty=0;
+    for (let row=0;row<9;row++) for (let col=0;col<9;col++) {
+        if (board[row][col]===0) empty++;
+        else if (board[row][col]!==solution[row][col]) incorrect++;
+    }
+    let status = document.getElementById('status-message');
+    if (empty===0 && incorrect===0) {
+        status.textContent = "Perfect! The puzzle is solved correctly! 🎉";
+        status.className = "my-2 text-sm h-5 text-center text-green-600 dark:text-green-400 font-bold";
+    } else {
+        let msg = "";
+        if (empty>0) msg+=`${empty} empty cell${empty>1?'s':''}. `;
+        if (incorrect>0) msg+=`${incorrect} incorrect value${incorrect>1?'s':''}.`;
+        status.textContent = msg;
+        status.className = "my-2 text-sm h-5 text-center text-red-500 dark:text-red-400";
+    }
+}
+function showSolution() {
+    board = JSON.parse(JSON.stringify(solution));
+    updateBoardUI();
+    highlightConflicts();
+    let status = document.getElementById('status-message');
+    status.textContent = "Solution revealed";
+    status.className = "my-2 text-sm h-5 text-center";
+    status.style.color = "var(--color-primary)";
+}
+function generatePuzzle() {
+    let status = document.getElementById('status-message');
+    status.textContent = "Generating puzzle...";
+    status.className = "my-2 text-sm h-5 text-center";
+    status.style.color = "var(--color-primary)";
+    solution = generateSolvedBoard();
+    let difficulty = document.getElementById('difficulty').value;
+    generateCages(difficulty);
+    assignCageSums(solution);
+    board = Array(9).fill().map(()=>Array(9).fill(0));
+    updateBoardUI();
+    renderCages();
+    selectedCell = null;
+    setTimeout(()=>{
+        status.textContent = `New ${difficulty} game started`;
+        status.className = "my-2 text-sm h-5 text-center text-green-600 dark:text-green-400";
+        setTimeout(()=>{status.textContent="";status.className="my-2 text-sm h-5 text-center";},2000);
+    },400);
+}
+function setupNumberPad() {
+    document.querySelectorAll('.number-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            if (selectedCell) {
+                selectedCell.value = btn.textContent;
+                updateBoardFromInput(selectedCell);
+            }
+        });
+    });
+    document.getElementById('clear-btn').addEventListener('click',()=>{
+        if (selectedCell) {
+            selectedCell.value = '';
+            updateBoardFromInput(selectedCell);
+        }
+    });
+}
+function initializeGame() {
+    createBoard();
+    document.getElementById('new-game-btn').addEventListener('click',generatePuzzle);
+    document.getElementById('check-btn').addEventListener('click',checkSolution);
+    document.getElementById('solve-btn').addEventListener('click',showSolution);
+    setupNumberPad();
+    generatePuzzle();
+}
+window.addEventListener('DOMContentLoaded',initializeGame);
+</script>
+
+
+</body></html>
