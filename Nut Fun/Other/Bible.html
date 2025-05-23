@@ -1,0 +1,141 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible.com Browser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+    <style>
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .loading-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 10;
+        }
+
+        .dark .loading-container {
+            background-color: rgba(17, 24, 39, 0.9);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #5D5CDE;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .dark .spinner {
+            border: 5px solid #374151;
+            border-top: 5px solid #5D5CDE;
+        }
+
+        .csp-warning {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200 m-0 p-0 overflow-hidden">
+    <div class="iframe-container">
+        <iframe id="bibleFrame" src="https://www.bible.com/bible" title="Bible.com" allowfullscreen="" onload="hideLoading()" onerror="showError()">
+        </iframe>
+        
+        <div id="loadingContainer" class="loading-container">
+            <div class="spinner mb-5"></div>
+            <p>Loading Bible.com...</p>
+        </div>
+
+        <div id="cspWarning" class="csp-warning bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-w-xl mx-auto">
+            <h2 class="text-xl font-bold mb-4 text-primary">Content Security Policy Notice</h2>
+            <p class="mb-4">To view Bible.com in this app, you need to allow additional content by accepting the prompt that appears.</p>
+            <p class="mb-4">After accepting, the page will reload with Bible.com content.</p>
+            <button id="retryButton" class="py-2 px-4 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium">
+                Reload Bible.com
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const loadingContainer = document.getElementById('loadingContainer');
+        const cspWarning = document.getElementById('cspWarning');
+        const retryButton = document.getElementById('retryButton');
+        const bibleFrame = document.getElementById('bibleFrame');
+        
+        // Timer to check if loading takes too long
+        const loadingTimer = setTimeout(() => {
+            // Show CSP warning after 5 seconds if still loading
+            loadingContainer.style.display = 'none';
+            cspWarning.style.display = 'block';
+        }, 5000);
+        
+        function hideLoading() {
+            clearTimeout(loadingTimer);
+            loadingContainer.style.display = 'none';
+        }
+        
+        function showError() {
+            loadingContainer.style.display = 'none';
+            cspWarning.style.display = 'block';
+        }
+        
+        retryButton.addEventListener('click', () => {
+            // Reload the iframe
+            cspWarning.style.display = 'none';
+            loadingContainer.style.display = 'flex';
+            bibleFrame.src = 'https://www.bible.com/bible';
+        });
+    </script>
+
+
+</body></html>
