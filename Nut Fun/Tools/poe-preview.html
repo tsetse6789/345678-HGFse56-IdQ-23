@@ -1,0 +1,419 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Translator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4A49B5',
+                    }
+                }
+            }
+        };
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Translator</h1>
+            <p class="text-gray-600 dark:text-gray-300">Powered by Nut</p>
+        </header>
+
+        <main>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Source Language Section -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <label for="sourceLanguage" class="block text-gray-700 dark:text-gray-300 font-medium">From:</label>
+                        <select id="sourceLanguage" class="bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded border border-gray-300 dark:border-gray-600 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="en">English</option>
+                            <option value="ar">Arabic</option>
+                            <option value="zh">Chinese</option>
+                            <option value="nl">Dutch</option>
+                            <option value="fi">Finnish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="hi">Hindi</option>
+                            <option value="hu">Hungarian</option>
+                            <option value="id">Indonesian</option>
+                            <option value="ga">Irish</option>
+                            <option value="it">Italian</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="pl">Polish</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="ru">Russian</option>
+                            <option value="es">Spanish</option>
+                            <option value="sv">Swedish</option>
+                            <option value="tr">Turkish</option>
+                            <option value="uk">Ukrainian</option>
+                            <option value="vi">Vietnamese</option>
+                        </select>
+                    </div>
+                    <textarea id="sourceText" class="w-full h-48 p-3 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary text-base" placeholder="Enter text to translate"></textarea>
+                    <div class="mt-2 flex justify-between">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            <span id="charCount">0</span>/500 characters
+                        </div>
+                        <button id="clearSourceBtn" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- Target Language Section -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <label for="targetLanguage" class="block text-gray-700 dark:text-gray-300 font-medium">To:</label>
+                        <select id="targetLanguage" class="bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded border border-gray-300 dark:border-gray-600 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="en">English</option>
+                            <option value="ar">Arabic</option>
+                            <option value="zh">Chinese</option>
+                            <option value="nl">Dutch</option>
+                            <option value="fi">Finnish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="hi">Hindi</option>
+                            <option value="hu">Hungarian</option>
+                            <option value="id">Indonesian</option>
+                            <option value="ga">Irish</option>
+                            <option value="it">Italian</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="pl">Polish</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="ru">Russian</option>
+                            <option value="es">Spanish</option>
+                            <option value="sv">Swedish</option>
+                            <option value="tr">Turkish</option>
+                            <option value="uk">Ukrainian</option>
+                            <option value="vi">Vietnamese</option>
+                        </select>
+                    </div>
+                    <div id="translationOutput" class="w-full h-48 p-3 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md overflow-auto text-base">
+                        <p class="text-gray-400 dark:text-gray-400 italic">Translation will appear here</p>
+                    </div>
+                    <div class="mt-2 flex justify-end">
+                        <button id="copyBtn" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Translate Button -->
+            <div class="flex justify-center mt-6">
+                <button id="swapBtn" class="mr-2 bg-white dark:bg-gray-700 text-primary dark:text-primary hover:bg-gray-100 dark:hover:bg-gray-600 px-3 py-2 rounded-full border border-primary transition-colors duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
+                </button>
+                <button id="translateBtn" class="bg-primary hover:bg-primary-dark text-white font-bold py-2 px-8 rounded-md transition-colors duration-300 flex items-center">
+                    <span>Translate</span>
+                    <div id="loadingSpinner" class="ml-2 hidden">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Error message -->
+            <div id="errorMessage" class="hidden mt-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-md text-center"></div>
+        </main>
+
+        <footer class="mt-12 text-center text-gray-500 dark:text-gray-400 text-sm">
+            <p>Uses MyMemory Translation API for translations. <br>Limited to 500 characters per translation. <br>Last Update on 2025. Created on 2022. </p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sourceText = document.getElementById('sourceText');
+            const sourceLanguage = document.getElementById('sourceLanguage');
+            const targetLanguage = document.getElementById('targetLanguage');
+            const translationOutput = document.getElementById('translationOutput');
+            const translateBtn = document.getElementById('translateBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const clearSourceBtn = document.getElementById('clearSourceBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const swapBtn = document.getElementById('swapBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const charCount = document.getElementById('charCount');
+
+            // Character counter
+            sourceText.addEventListener('input', () => {
+                const count = sourceText.value.length;
+                charCount.textContent = count;
+                if (count > 500) {
+                    charCount.classList.add('text-red-500');
+                } else {
+                    charCount.classList.remove('text-red-500');
+                }
+            });
+
+            // Set initial language based on browser language
+            const browserLang = navigator.language || navigator.userLanguage;
+            const shortLang = browserLang.split('-')[0];
+            const supportedLanguages = ['en', 'ar', 'zh', 'nl', 'fi', 'fr', 'de', 'hi', 'hu', 'id', 'ga', 'it', 'ja', 'ko', 'pl', 'pt', 'ru', 'es', 'sv', 'tr', 'uk', 'vi'];
+            if (supportedLanguages.includes(shortLang)) {
+                targetLanguage.value = shortLang;
+            }
+
+            // Online translation handler
+            translateBtn.addEventListener('click', async () => {
+                const text = sourceText.value.trim();
+                if (!text) {
+                    showError('Please enter text to translate');
+                    return;
+                }
+                if (text.length > 500) {
+                    showError('Text exceeds 500 character limit');
+                    return;
+                }
+                const source = sourceLanguage.value;
+                const target = targetLanguage.value;
+                if (source === target) {
+                    showError('Source and target languages cannot be the same');
+                    return;
+                }
+
+                loadingSpinner.classList.remove('hidden');
+                translateBtn.disabled = true;
+                translationOutput.innerHTML = '<p class="text-gray-400 dark:text-gray-400">Translating...</p>';
+                hideError();
+
+                try {
+                    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${target}`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Translation failed with status: ${response.status}`);
+                    const data = await response.json();
+
+                    if (data.responseData && data.responseData.translatedText) {
+                        let translatedText = data.responseData.translatedText;
+                        translatedText = translatedText.replace(/&quot;/g, '"')
+                            .replace(/&amp;/g, '&')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>');
+                        translationOutput.innerHTML = `<p>${translatedText}</p>`;
+                    } else {
+                        throw new Error('No translation returned');
+                    }
+                } catch (err) {
+                    // Fallback to offline dictionary
+                    const translationResult = advancedFallbackTranslate(text, source, target);
+                    if (translationResult.success) {
+                        translationOutput.innerHTML = `
+                            <div>
+                                <p>${translationResult.text}</p>
+                                <p class="text-xs text-amber-500 dark:text-amber-400 mt-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Using offline dictionary. ${translationResult.message}
+                                </p>
+                            </div>`;
+                    } else {
+                        showError('Online translation unavailable, and offline dictionary has no result.');
+                        translationOutput.innerHTML = '<p class="text-gray-400 dark:text-gray-400 italic">Translation will appear here</p>';
+                    }
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                    translateBtn.disabled = false;
+                }
+            });
+
+            // Offline fallback dictionary (same as before)
+            function fallbackTranslate(text, source, target) {
+                const dictionary = {
+                    'en': {
+                        'hello': { 'es': 'hola', 'fr': 'bonjour', 'de': 'hallo', 'it': 'ciao', 'pt': 'olá', 'ru': 'привет', 'zh': '你好', 'ja': 'こんにちは' },
+                        'hi': { 'es': 'hola', 'fr': 'salut', 'de': 'hi', 'it': 'ciao', 'pt': 'oi', 'ru': 'привет', 'zh': '嗨', 'ja': 'やあ' },
+                        'goodbye': { 'es': 'adiós', 'fr': 'au revoir', 'de': 'auf wiedersehen', 'it': 'arrivederci', 'pt': 'adeus', 'ru': 'до свидания', 'zh': '再见', 'ja': 'さようなら' },
+                        'bye': { 'es': 'adiós', 'fr': 'salut', 'de': 'tschüss', 'it': 'ciao', 'pt': 'tchau', 'ru': 'пока', 'zh': '拜拜', 'ja': 'バイバイ' },
+                        'thank you': { 'es': 'gracias', 'fr': 'merci', 'de': 'danke', 'it': 'grazie', 'pt': 'obrigado', 'ru': 'спасибо', 'zh': '谢谢', 'ja': 'ありがとう' },
+                        'thanks': { 'es': 'gracias', 'fr': 'merci', 'de': 'danke', 'it': 'grazie', 'pt': 'obrigado', 'ru': 'спасибо', 'zh': '谢谢', 'ja': 'ありがとう' },
+                        'you are welcome': { 'es': 'de nada', 'fr': 'de rien', 'de': 'bitte schön', 'it': 'prego', 'pt': 'de nada', 'ru': 'пожалуйста', 'zh': '不客气', 'ja': 'どういたしまして' },
+                        'please': { 'es': 'por favor', 'fr': 's\'il vous plaît', 'de': 'bitte', 'it': 'per favore', 'pt': 'por favor', 'ru': 'пожалуйста', 'zh': '请', 'ja': 'お願いします' },
+                        'sorry': { 'es': 'lo siento', 'fr': 'désolé', 'de': 'entschuldigung', 'it': 'scusa', 'pt': 'desculpe', 'ru': 'извините', 'zh': '对不起', 'ja': 'すみません' },
+                        'excuse me': { 'es': 'disculpe', 'fr': 'excusez-moi', 'de': 'entschuldigen sie', 'it': 'scusi', 'pt': 'com licença', 'ru': 'извините', 'zh': '打扰一下', 'ja': 'すみません' },
+                        'yes': { 'es': 'sí', 'fr': 'oui', 'de': 'ja', 'it': 'sì', 'pt': 'sim', 'ru': 'да', 'zh': '是的', 'ja': 'はい' },
+                        'no': { 'es': 'no', 'fr': 'non', 'de': 'nein', 'it': 'no', 'pt': 'não', 'ru': 'нет', 'zh': '不', 'ja': 'いいえ' },
+                        'maybe': { 'es': 'quizás', 'fr': 'peut-être', 'de': 'vielleicht', 'it': 'forse', 'pt': 'talvez', 'ru': 'может быть', 'zh': '也许', 'ja': 'たぶん' },
+                        'good morning': { 'es': 'buenos días', 'fr': 'bonjour', 'de': 'guten morgen', 'it': 'buongiorno', 'pt': 'bom dia', 'ru': 'доброе утро', 'zh': '早上好', 'ja': 'おはようございます' },
+                        'good afternoon': { 'es': 'buenas tardes', 'fr': 'bon après-midi', 'de': 'guten tag', 'it': 'buon pomeriggio', 'pt': 'boa tarde', 'ru': 'добрый день', 'zh': '下午好', 'ja': 'こんにちは' },
+                        'good evening': { 'es': 'buenas noches', 'fr': 'bonsoir', 'de': 'guten abend', 'it': 'buonasera', 'pt': 'boa noite', 'ru': 'добрый вечер', 'zh': '晚上好', 'ja': 'こんばんは' },
+                        'good night': { 'es': 'buenas noches', 'fr': 'bonne nuit', 'de': 'gute nacht', 'it': 'buonanotte', 'pt': 'boa noite', 'ru': 'спокойной ночи', 'zh': '晚安', 'ja': 'おやすみなさい' },
+                        'how are you': { 'es': 'cómo estás', 'fr': 'comment ça va', 'de': 'wie geht es dir', 'it': 'come stai', 'pt': 'como vai você', 'ru': 'как дела', 'zh': '你好吗', 'ja': 'お元気ですか' },
+                        'what is your name': { 'es': 'cómo te llamas', 'fr': 'comment vous appelez-vous', 'de': 'wie heißt du', 'it': 'come ti chiami', 'pt': 'qual é o seu nome', 'ru': 'как вас зовут', 'zh': '你叫什么名字', 'ja': 'お名前は何ですか' },
+                        'where are you from': { 'es': 'de dónde eres', 'fr': 'd\'où venez-vous', 'de': 'woher kommst du', 'it': 'di dove sei', 'pt': 'de onde você é', 'ru': 'откуда вы', 'zh': '你来自哪里', 'ja': '出身はどちらですか' },
+                        'today': { 'es': 'hoy', 'fr': 'aujourd\'hui', 'de': 'heute', 'it': 'oggi', 'pt': 'hoje', 'ru': 'сегодня', 'zh': '今天', 'ja': '今日' },
+                        'tomorrow': { 'es': 'mañana', 'fr': 'demain', 'de': 'morgen', 'it': 'domani', 'pt': 'amanhã', 'ru': 'завтра', 'zh': '明天', 'ja': '明日' },
+                        'yesterday': { 'es': 'ayer', 'fr': 'hier', 'de': 'gestern', 'it': 'ieri', 'pt': 'ontem', 'ru': 'вчера', 'zh': '昨天', 'ja': '昨日' },
+                        'here': { 'es': 'aquí', 'fr': 'ici', 'de': 'hier', 'it': 'qui', 'pt': 'aqui', 'ru': 'здесь', 'zh': '这里', 'ja': 'ここ' },
+                        'there': { 'es': 'allí', 'fr': 'là', 'de': 'dort', 'it': 'lì', 'pt': 'lá', 'ru': 'там', 'zh': '那里', 'ja': 'そこ' },
+                        'food': { 'es': 'comida', 'fr': 'nourriture', 'de': 'essen', 'it': 'cibo', 'pt': 'comida', 'ru': 'еда', 'zh': '食物', 'ja': '食べ物' },
+                        'water': { 'es': 'agua', 'fr': 'eau', 'de': 'wasser', 'it': 'acqua', 'pt': 'água', 'ru': 'вода', 'zh': '水', 'ja': '水' },
+                        'friend': { 'es': 'amigo', 'fr': 'ami', 'de': 'freund', 'it': 'amico', 'pt': 'amigo', 'ru': 'друг', 'zh': '朋友', 'ja': '友達' },
+                        'help': { 'es': 'ayuda', 'fr': 'aide', 'de': 'hilfe', 'it': 'aiuto', 'pt': 'ajuda', 'ru': 'помощь', 'zh': '帮助', 'ja': '助け' },
+                        'time': { 'es': 'tiempo', 'fr': 'temps', 'de': 'zeit', 'it': 'tempo', 'pt': 'tempo', 'ru': 'время', 'zh': '时间', 'ja': '時間' },
+                    },
+                    'es': {
+                        'hola': { 'en': 'hello' },
+                        'gracias': { 'en': 'thank you' },
+                        'por favor': { 'en': 'please' },
+                        'adiós': { 'en': 'goodbye' }
+                    },
+                    'fr': {
+                        'bonjour': { 'en': 'hello' },
+                        'merci': { 'en': 'thank you' },
+                        's\'il vous plaît': { 'en': 'please' },
+                        'au revoir': { 'en': 'goodbye' }
+                    },
+                    'de': {
+                        'hallo': { 'en': 'hello' },
+                        'danke': { 'en': 'thank you' },
+                        'bitte': { 'en': 'please' },
+                        'auf wiedersehen': { 'en': 'goodbye' }
+                    }
+                };
+                const sourceLanguage = source === 'auto' ? 'en' : source;
+                if (sourceLanguage === target) {
+                    return text;
+                }
+                if (dictionary[sourceLanguage]) {
+                    const lowerText = text.toLowerCase().trim();
+                    const translations = dictionary[sourceLanguage][lowerText];
+                    if (translations && translations[target]) {
+                        return translations[target];
+                    }
+                }
+                if (sourceLanguage === 'en') {
+                    return null;
+                }
+                return null;
+            }
+
+            function advancedFallbackTranslate(text, source, target) {
+                if (source === target && source !== 'auto') {
+                    return { 
+                        success: true, 
+                        text: text,
+                        message: "Source and target languages are the same."
+                    };
+                }
+                const sourceLanguage = source === 'auto' ? 'en' : source;
+                const phraseTranslation = fallbackTranslate(text.toLowerCase().trim(), sourceLanguage, target);
+                if (phraseTranslation) {
+                    return { 
+                        success: true, 
+                        text: phraseTranslation,
+                        message: "Full phrase translation available."
+                    };
+                }
+                const words = text.split(/\s+/);
+                let translatedWords = [];
+                let translatedCount = 0;
+                for (const word of words) {
+                    const cleanWord = word.toLowerCase().replace(/[.,!?;:'"()]/g, '');
+                    const translation = fallbackTranslate(cleanWord, sourceLanguage, target);
+                    if (translation) {
+                        const punctuation = word.match(/[.,!?;:'"()]+$/);
+                        translatedWords.push(translation + (punctuation ? punctuation[0] : ''));
+                        translatedCount++;
+                    } else {
+                        translatedWords.push(word);
+                    }
+                }
+                if (translatedCount === 0) {
+                    return { 
+                        success: false, 
+                        text: text,
+                        message: "No translations found in dictionary."
+                    };
+                }
+                const translationRatio = (translatedCount / words.length * 100).toFixed(0);
+                return { 
+                    success: true, 
+                    text: translatedWords.join(' '),
+                    message: `${translationRatio}% of words translated. Results may be incomplete.`
+                };
+            }
+
+            // Clear source text button
+            clearSourceBtn.addEventListener('click', () => {
+                sourceText.value = '';
+                charCount.textContent = '0';
+                charCount.classList.remove('text-red-500');
+                sourceText.focus();
+            });
+
+            // Copy translation button
+            copyBtn.addEventListener('click', async () => {
+                const text = translationOutput.textContent;
+                if (text && text !== 'Translation will appear here' && text !== 'Translating...') {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        const originalSvg = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        `;
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalSvg;
+                        }, 2000);
+                    } catch (err) {
+                        showError('Could not copy text: ' + err.message);
+                    }
+                }
+            });
+
+            swapBtn.addEventListener('click', () => {
+                const tempLang = sourceLanguage.value;
+                sourceLanguage.value = targetLanguage.value;
+                targetLanguage.value = tempLang;
+                const currentOutput = translationOutput.textContent;
+                if (currentOutput && currentOutput !== 'Translation will appear here' && currentOutput !== 'Translating...') {
+                    const tempText = sourceText.value;
+                    sourceText.value = currentOutput;
+                    charCount.textContent = currentOutput.length;
+                    if (currentOutput.length > 500) {
+                        charCount.classList.add('text-red-500');
+                    }
+                    translationOutput.innerHTML = `<p>${tempText}</p>`;
+                }
+            });
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+                setTimeout(() => { hideError(); }, 5000);
+            }
+            function hideError() {
+                errorMessage.classList.add('hidden');
+            }
+        });
+    </script>
+
+
+</body></html>
