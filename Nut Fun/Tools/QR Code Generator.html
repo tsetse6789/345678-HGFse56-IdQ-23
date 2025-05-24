@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        };
+
+        // Dark mode detection
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+        });
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen transition-colors duration-300">
+    <div class="container mx-auto px-4 py-8 max-w-xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-primary">QR Code Generator</h1>
+        
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <div class="mb-4">
+                <label for="qr-type" class="block text-sm font-medium mb-2">QR Code Type</label>
+                <select id="qr-type" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="link">Link</option>
+                    <option value="text">Text</option>
+                    <option value="email">E-mail</option>
+                    <option value="phone">Call</option>
+                    <option value="sms">SMS</option>
+                    <option value="vcard">V-card</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="wifi">Wi-Fi</option>
+                    <option value="pdf">PDF</option>
+                    <option value="app">App</option>
+                    <option value="image">Images</option>
+                    <option value="video">Video</option>
+                    <option value="social">Social Media</option>
+                    <option value="event">Event</option>
+                    <option value="barcode">2D Barcode</option>
+                </select>
+            </div>
+            
+            <div id="qr-forms">
+                <div id="link-form" class="qr-form mb-4">
+                    <label for="link-input" class="block text-sm font-medium mb-2">Enter URL</label>
+                    <input type="url" id="link-input" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://example.com">
+                </div>
+
+                <div id="text-form" class="qr-form mb-4 hidden">
+                    <label for="text-input" class="block text-sm font-medium mb-2">Enter Text</label>
+                    <textarea id="text-input" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Your text here..." rows="3"></textarea>
+                </div>
+
+                <div id="email-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="email-address" class="block text-sm font-medium mb-2">Email Address</label>
+                            <input type="email" id="email-address" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="your@email.com">
+                        </div>
+                        <div>
+                            <label for="email-subject" class="block text-sm font-medium mb-2">Subject (optional)</label>
+                            <input type="text" id="email-subject" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Email subject">
+                        </div>
+                        <div>
+                            <label for="email-body" class="block text-sm font-medium mb-2">Body (optional)</label>
+                            <textarea id="email-body" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Email content..." rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="phone-form" class="qr-form mb-4 hidden">
+                    <label for="phone-input" class="block text-sm font-medium mb-2">Phone Number</label>
+                    <input type="tel" id="phone-input" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="+1234567890">
+                </div>
+
+                <div id="sms-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="sms-number" class="block text-sm font-medium mb-2">Phone Number</label>
+                            <input type="tel" id="sms-number" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="+1234567890">
+                        </div>
+                        <div>
+                            <label for="sms-message" class="block text-sm font-medium mb-2">Message (optional)</label>
+                            <textarea id="sms-message" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Your message here..." rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vcard-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="vcard-firstname" class="block text-sm font-medium mb-2">First Name</label>
+                            <input type="text" id="vcard-firstname" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label for="vcard-lastname" class="block text-sm font-medium mb-2">Last Name</label>
+                            <input type="text" id="vcard-lastname" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <label for="vcard-organization" class="block text-sm font-medium mb-2">Organization (optional)</label>
+                        <input type="text" id="vcard-organization" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div class="mt-2">
+                        <label for="vcard-phone" class="block text-sm font-medium mb-2">Phone</label>
+                        <input type="tel" id="vcard-phone" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div class="mt-2">
+                        <label for="vcard-email" class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" id="vcard-email" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div class="mt-2">
+                        <label for="vcard-website" class="block text-sm font-medium mb-2">Website (optional)</label>
+                        <input type="url" id="vcard-website" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div class="mt-2">
+                        <label for="vcard-address" class="block text-sm font-medium mb-2">Address (optional)</label>
+                        <textarea id="vcard-address" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div id="whatsapp-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="whatsapp-number" class="block text-sm font-medium mb-2">WhatsApp Number</label>
+                            <input type="tel" id="whatsapp-number" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="+1234567890">
+                        </div>
+                        <div>
+                            <label for="whatsapp-message" class="block text-sm font-medium mb-2">Message (optional)</label>
+                            <textarea id="whatsapp-message" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Your message here..." rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="wifi-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="wifi-ssid" class="block text-sm font-medium mb-2">Network Name (SSID)</label>
+                            <input type="text" id="wifi-ssid" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Your WiFi Name">
+                        </div>
+                        <div>
+                            <label for="wifi-password" class="block text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="wifi-password" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="WiFi Password">
+                        </div>
+                        <div>
+                            <label for="wifi-encryption" class="block text-sm font-medium mb-2">Encryption</label>
+                            <select id="wifi-encryption" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="WPA">WPA/WPA2</option>
+                                <option value="WEP">WEP</option>
+                                <option value="nopass">None</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="wifi-hidden" class="rounded text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm">Hidden Network</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pdf-form" class="qr-form mb-4 hidden">
+                    <label for="pdf-link" class="block text-sm font-medium mb-2">PDF URL</label>
+                    <input type="url" id="pdf-link" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://example.com/document.pdf">
+                </div>
+
+                <div id="app-form" class="qr-form mb-4 hidden">
+                    <label for="app-link" class="block text-sm font-medium mb-2">App Store Link</label>
+                    <input type="url" id="app-link" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://play.google.com/store/apps/details?id=com.example.app">
+                </div>
+
+                <div id="image-form" class="qr-form mb-4 hidden">
+                    <label for="image-link" class="block text-sm font-medium mb-2">Image URL</label>
+                    <input type="url" id="image-link" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://example.com/image.jpg">
+                </div>
+
+                <div id="video-form" class="qr-form mb-4 hidden">
+                    <label for="video-link" class="block text-sm font-medium mb-2">Video URL</label>
+                    <input type="url" id="video-link" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://youtube.com/watch?v=example">
+                </div>
+
+                <div id="social-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="social-platform" class="block text-sm font-medium mb-2">Platform</label>
+                            <select id="social-platform" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="twitter">Twitter</option>
+                                <option value="facebook">Facebook</option>
+                                <option value="instagram">Instagram</option>
+                                <option value="linkedin">LinkedIn</option>
+                                <option value="tiktok">TikTok</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="social-username" class="block text-sm font-medium mb-2">Username or Profile URL</label>
+                            <input type="text" id="social-username" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="username or full profile URL">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="event-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="event-title" class="block text-sm font-medium mb-2">Event Title</label>
+                            <input type="text" id="event-title" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label for="event-location" class="block text-sm font-medium mb-2">Location</label>
+                            <input type="text" id="event-location" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label for="event-start" class="block text-sm font-medium mb-2">Start Date & Time</label>
+                            <input type="datetime-local" id="event-start" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label for="event-end" class="block text-sm font-medium mb-2">End Date & Time</label>
+                            <input type="datetime-local" id="event-end" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label for="event-description" class="block text-sm font-medium mb-2">Description (optional)</label>
+                            <textarea id="event-description" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="barcode-form" class="qr-form mb-4 hidden">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="barcode-type" class="block text-sm font-medium mb-2">Barcode Type</label>
+                            <select id="barcode-type" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="CODE128">Code 128 (General purpose)</option>
+                                <option value="CODE128A">Code 128 A (ASCII control chars)</option>
+                                <option value="CODE128B">Code 128 B (ASCII text chars)</option>
+                                <option value="CODE128C">Code 128 C (Numbers only)</option>
+                                <option value="EAN13">EAN-13 (13 digits)</option>
+                                <option value="EAN8">EAN-8 (8 digits)</option>
+                                <option value="UPC">UPC (12 digits)</option>
+                                <option value="CODE39">Code 39</option>
+                                <option value="ITF14">ITF-14</option>
+                                <option value="MSI">MSI</option>
+                                <option value="pharmacode">Pharmacode</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="barcode-input" class="block text-sm font-medium mb-2">Barcode Data</label>
+                            <input type="text" id="barcode-input" class="w-full px-4 py-2 text-base rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Enter barcode data...">
+                            <p id="barcode-format-hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                For EAN/UPC: Enter numbers only (13 digits for EAN-13, 8 for EAN-8, 12 for UPC)
+                            </p>
+                        </div>
+                        <div>
+                            <label for="barcode-height" class="block text-sm font-medium mb-2">Height: <span id="barcode-height-value">80</span>px</label>
+                            <input type="range" id="barcode-height" min="40" max="150" step="5" value="80" class="w-full h-10 accent-primary">
+                        </div>
+                        <div>
+                            <label for="barcode-width" class="block text-sm font-medium mb-2">Bar Width: <span id="barcode-width-value">2</span>px</label>
+                            <input type="range" id="barcode-width" min="1" max="5" step="0.5" value="2" class="w-full h-10 accent-primary">
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="barcode-text" class="rounded text-primary focus:ring-primary" checked="">
+                                <span class="ml-2 text-sm">Show Text</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="qr-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="color-picker" class="block text-sm font-medium mb-2">QR Code Color</label>
+                    <input type="color" id="color-picker" value="#000000" class="w-full h-10 rounded-md border border-gray-300 dark:border-gray-700 cursor-pointer">
+                </div>
+                
+                <div>
+                    <label for="size-slider" class="block text-sm font-medium mb-2">Size: <span id="size-value">200</span>px</label>
+                    <input type="range" id="size-slider" min="100" max="400" step="10" value="200" class="w-full h-10 accent-primary">
+                </div>
+            </div>
+            
+            <button id="generate-btn" class="w-full bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 rounded-md mb-6 transition-colors">
+                Generate QR Code
+            </button>
+            
+            <div id="qr-result" class="flex flex-col items-center justify-center hidden">
+                <div id="qr-container" class="bg-white p-4 rounded-md mb-4">
+                    <canvas id="qr-canvas" class="mx-auto"></canvas>
+                    <svg id="barcode-svg" class="mx-auto hidden"></svg>
+                </div>
+                
+                <button id="download-btn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                    Download Code
+                </button>
+            </div>
+            
+            <div id="error-message" class="mt-4 text-red-500 text-center hidden"></div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const qrTypeSelect = document.getElementById('qr-type');
+        const colorPicker = document.getElementById('color-picker');
+        const sizeSlider = document.getElementById('size-slider');
+        const sizeValue = document.getElementById('size-value');
+        const generateBtn = document.getElementById('generate-btn');
+        const qrResult = document.getElementById('qr-result');
+        const qrCanvas = document.getElementById('qr-canvas');
+        const downloadBtn = document.getElementById('download-btn');
+        const errorMessage = document.getElementById('error-message');
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value;
+        });
+        
+        // Update barcode height display
+        const barcodeHeight = document.getElementById('barcode-height');
+        const barcodeHeightValue = document.getElementById('barcode-height-value');
+        if (barcodeHeight && barcodeHeightValue) {
+            barcodeHeight.addEventListener('input', () => {
+                barcodeHeightValue.textContent = barcodeHeight.value;
+            });
+        }
+        
+        // Update barcode width display
+        const barcodeWidth = document.getElementById('barcode-width');
+        const barcodeWidthValue = document.getElementById('barcode-width-value');
+        if (barcodeWidth && barcodeWidthValue) {
+            barcodeWidth.addEventListener('input', () => {
+                barcodeWidthValue.textContent = barcodeWidth.value;
+            });
+        }
+        
+        // Update barcode format hint based on selected barcode type
+        const barcodeType = document.getElementById('barcode-type');
+        const barcodeFormatHint = document.getElementById('barcode-format-hint');
+        if (barcodeType && barcodeFormatHint) {
+            barcodeType.addEventListener('change', () => {
+                const type = barcodeType.value;
+                let hint = '';
+                
+                if (type === 'EAN13') {
+                    hint = 'Enter exactly 13 digits (numbers only)';
+                } else if (type === 'EAN8') {
+                    hint = 'Enter exactly 8 digits (numbers only)';
+                } else if (type === 'UPC') {
+                    hint = 'Enter exactly 12 digits (numbers only)';
+                } else if (type === 'CODE128C') {
+                    hint = 'Enter numbers only (must be an even number of digits)';
+                } else if (type === 'ITF14') {
+                    hint = 'Enter exactly 14 digits (numbers only)';
+                } else if (type === 'CODE39') {
+                    hint = 'Uppercase letters, numbers and - . $ / + % space';
+                } else if (type === 'pharmacode') {
+                    hint = 'Enter a number between 3 and 131070';
+                } else {
+                    hint = 'General purpose barcode format';
+                }
+                
+                barcodeFormatHint.textContent = hint;
+            });
+        }
+        
+        // Show/hide form based on QR type selection
+        qrTypeSelect.addEventListener('change', () => {
+            // Hide all forms
+            document.querySelectorAll('.qr-form').forEach(form => {
+                form.classList.add('hidden');
+            });
+            
+            // Show selected form
+            const selectedForm = document.getElementById(`${qrTypeSelect.value}-form`);
+            if (selectedForm) {
+                selectedForm.classList.remove('hidden');
+            }
+        });
+        
+        // Generate QR code
+        generateBtn.addEventListener('click', generateQRCode);
+        
+        // Also generate when pressing Enter in input fields
+        document.querySelectorAll('input, textarea').forEach(input => {
+            input.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    generateQRCode();
+                }
+            });
+        });
+        
+        // Download QR code
+        downloadBtn.addEventListener('click', downloadQRCode);
+        
+        function generateQRCode() {
+            const qrType = qrTypeSelect.value;
+            const color = colorPicker.value;
+            const size = parseInt(sizeSlider.value);
+            
+            // Get content based on QR type
+            let content = '';
+            let errorMsg = '';
+            
+            switch (qrType) {
+                case 'link':
+                    const linkInput = document.getElementById('link-input');
+                    content = linkInput.value.trim();
+                    if (!content) errorMsg = 'Please enter a URL';
+                    if (content && !content.startsWith('http')) {
+                        content = 'https://' + content;
+                    }
+                    break;
+                    
+                case 'text':
+                    const textInput = document.getElementById('text-input');
+                    content = textInput.value.trim();
+                    if (!content) errorMsg = 'Please enter some text';
+                    break;
+                    
+                case 'email':
+                    const emailAddress = document.getElementById('email-address').value.trim();
+                    const emailSubject = document.getElementById('email-subject').value.trim();
+                    const emailBody = document.getElementById('email-body').value.trim();
+                    
+                    if (!emailAddress) {
+                        errorMsg = 'Please enter an email address';
+                    } else {
+                        content = `mailto:${emailAddress}`;
+                        if (emailSubject || emailBody) content += '?';
+                        if (emailSubject) content += `subject=${encodeURIComponent(emailSubject)}`;
+                        if (emailSubject && emailBody) content += '&';
+                        if (emailBody) content += `body=${encodeURIComponent(emailBody)}`;
+                    }
+                    break;
+                    
+                case 'phone':
+                    const phoneInput = document.getElementById('phone-input').value.trim();
+                    if (!phoneInput) {
+                        errorMsg = 'Please enter a phone number';
+                    } else {
+                        content = `tel:${phoneInput}`;
+                    }
+                    break;
+                    
+                case 'sms':
+                    const smsNumber = document.getElementById('sms-number').value.trim();
+                    const smsMessage = document.getElementById('sms-message').value.trim();
+                    
+                    if (!smsNumber) {
+                        errorMsg = 'Please enter a phone number';
+                    } else {
+                        content = `sms:${smsNumber}`;
+                        if (smsMessage) content += `?body=${encodeURIComponent(smsMessage)}`;
+                    }
+                    break;
+                    
+                case 'vcard':
+                    const firstName = document.getElementById('vcard-firstname').value.trim();
+                    const lastName = document.getElementById('vcard-lastname').value.trim();
+                    const organization = document.getElementById('vcard-organization').value.trim();
+                    const phone = document.getElementById('vcard-phone').value.trim();
+                    const email = document.getElementById('vcard-email').value.trim();
+                    const website = document.getElementById('vcard-website').value.trim();
+                    const address = document.getElementById('vcard-address').value.trim();
+                    
+                    if (!firstName || !lastName || !phone || !email) {
+                        errorMsg = 'Please fill in all required fields (First Name, Last Name, Phone, Email)';
+                    } else {
+                        content = 'BEGIN:VCARD\nVERSION:3.0\n';
+                        content += `N:${lastName};${firstName};;;\n`;
+                        content += `FN:${firstName} ${lastName}\n`;
+                        if (organization) content += `ORG:${organization}\n`;
+                        if (phone) content += `TEL:${phone}\n`;
+                        if (email) content += `EMAIL:${email}\n`;
+                        if (website) content += `URL:${website}\n`;
+                        if (address) content += `ADR:;;${address};;;;\n`;
+                        content += 'END:VCARD';
+                    }
+                    break;
+                    
+                case 'whatsapp':
+                    const whatsappNumber = document.getElementById('whatsapp-number').value.trim();
+                    const whatsappMessage = document.getElementById('whatsapp-message').value.trim();
+                    
+                    if (!whatsappNumber) {
+                        errorMsg = 'Please enter a WhatsApp number';
+                    } else {
+                        // Remove any special characters from the number
+                        const cleanNumber = whatsappNumber.replace(/\D/g, '');
+                        content = `https://wa.me/${cleanNumber}`;
+                        if (whatsappMessage) content += `?text=${encodeURIComponent(whatsappMessage)}`;
+                    }
+                    break;
+                    
+                case 'wifi':
+                    const ssid = document.getElementById('wifi-ssid').value.trim();
+                    const password = document.getElementById('wifi-password').value.trim();
+                    const encryption = document.getElementById('wifi-encryption').value;
+                    const hidden = document.getElementById('wifi-hidden').checked;
+                    
+                    if (!ssid) {
+                        errorMsg = 'Please enter a WiFi network name (SSID)';
+                    } else {
+                        content = `WIFI:S:${ssid};`;
+                        if (encryption !== 'nopass') content += `P:${password};`;
+                        content += `T:${encryption};`;
+                        if (hidden) content += 'H:true;';
+                        content += ';';
+                    }
+                    break;
+                    
+                case 'pdf':
+                    content = document.getElementById('pdf-link').value.trim();
+                    if (!content) errorMsg = 'Please enter a PDF URL';
+                    if (content && !content.startsWith('http')) {
+                        content = 'https://' + content;
+                    }
+                    break;
+                    
+                case 'app':
+                    content = document.getElementById('app-link').value.trim();
+                    if (!content) errorMsg = 'Please enter an app store URL';
+                    if (content && !content.startsWith('http')) {
+                        content = 'https://' + content;
+                    }
+                    break;
+                    
+                case 'image':
+                    content = document.getElementById('image-link').value.trim();
+                    if (!content) errorMsg = 'Please enter an image URL';
+                    if (content && !content.startsWith('http')) {
+                        content = 'https://' + content;
+                    }
+                    break;
+                    
+                case 'video':
+                    content = document.getElementById('video-link').value.trim();
+                    if (!content) errorMsg = 'Please enter a video URL';
+                    if (content && !content.startsWith('http')) {
+                        content = 'https://' + content;
+                    }
+                    break;
+                    
+                case 'social':
+                    const platform = document.getElementById('social-platform').value;
+                    const username = document.getElementById('social-username').value.trim();
+                    
+                    if (!username) {
+                        errorMsg = 'Please enter a username or profile URL';
+                        break;
+                    }
+                    
+                    // If it's already a full URL, use it directly
+                    if (username.startsWith('http')) {
+                        content = username;
+                        break;
+                    }
+                    
+                    // Otherwise, construct the appropriate URL for the platform
+                    switch (platform) {
+                        case 'twitter':
+                            content = `https://twitter.com/${username}`;
+                            break;
+                        case 'facebook':
+                            content = `https://facebook.com/${username}`;
+                            break;
+                        case 'instagram':
+                            content = `https://instagram.com/${username}`;
+                            break;
+                        case 'linkedin':
+                            content = `https://linkedin.com/in/${username}`;
+                            break;
+                        case 'tiktok':
+                            content = `https://tiktok.com/@${username}`;
+                            break;
+                    }
+                    break;
+                    
+                case 'event':
+                    const title = document.getElementById('event-title').value.trim();
+                    const location = document.getElementById('event-location').value.trim();
+                    const startDate = document.getElementById('event-start').value;
+                    const endDate = document.getElementById('event-end').value;
+                    const description = document.getElementById('event-description').value.trim();
+                    
+                    if (!title || !location || !startDate || !endDate) {
+                        errorMsg = 'Please fill in all required event fields';
+                    } else {
+                        // Format for iCalendar
+                        const formatDate = (dateString) => {
+                            const date = new Date(dateString);
+                            return date.toISOString().replace(/-|:|\.\d+/g, '');
+                        };
+                        
+                        content = 'BEGIN:VEVENT\n';
+                        content += `SUMMARY:${title}\n`;
+                        content += `LOCATION:${location}\n`;
+                        content += `DTSTART:${formatDate(startDate)}\n`;
+                        content += `DTEND:${formatDate(endDate)}\n`;
+                        if (description) content += `DESCRIPTION:${description}\n`;
+                        content += 'END:VEVENT';
+                    }
+                    break;
+                    
+                case 'barcode':
+                    const barcodeInput = document.getElementById('barcode-input');
+                    const barcodeType = document.getElementById('barcode-type').value;
+                    content = barcodeInput.value.trim();
+                    
+                    if (!content) {
+                        errorMsg = 'Please enter barcode data';
+                        return;
+                    }
+                    
+                    // Specific validation for barcode types
+                    if (barcodeType === 'EAN13' && (!/^\d+$/.test(content) || content.length !== 13)) {
+                        errorMsg = 'EAN-13 requires exactly 13 digits';
+                    } else if (barcodeType === 'EAN8' && (!/^\d+$/.test(content) || content.length !== 8)) {
+                        errorMsg = 'EAN-8 requires exactly 8 digits';
+                    } else if (barcodeType === 'UPC' && (!/^\d+$/.test(content) || content.length !== 12)) {
+                        errorMsg = 'UPC requires exactly 12 digits';
+                    } else if (barcodeType === 'CODE128C' && (!/^\d+$/.test(content) || content.length % 2 !== 0)) {
+                        errorMsg = 'CODE128C requires numeric data and an even number of digits';
+                    } else if (barcodeType === 'ITF14' && (!/^\d+$/.test(content) || content.length !== 14)) {
+                        errorMsg = 'ITF-14 requires exactly 14 digits';
+                    } else if (barcodeType === 'pharmacode' && (!/^\d+$/.test(content) || parseInt(content) < 3 || parseInt(content) > 131070)) {
+                        errorMsg = 'Pharmacode requires a number between 3 and 131070';
+                    } else if (barcodeType === 'CODE39' && !/^[A-Z0-9\-\.\$\/\+\% ]+$/.test(content)) {
+                        errorMsg = 'Code 39 allows uppercase letters, numbers, and symbols (- . $ / + % space)';
+                    }
+                    break;
+            }
+            
+            // Validate input
+            if (errorMsg) {
+                showError(errorMsg);
+                return;
+            }
+            
+            // Clear previous errors
+            hideError();
+            
+            // Get elements
+            const qrCanvas = document.getElementById('qr-canvas');
+            const barcodeSvg = document.getElementById('barcode-svg');
+            
+            // Hide both initially
+            qrCanvas.style.display = 'none';
+            barcodeSvg.style.display = 'none';
+            barcodeSvg.innerHTML = ''; // Clear previous SVG content
+            
+            // Handle 2D Barcode separately
+            if (qrType === 'barcode') {
+                try {
+                    // Get barcode options
+                    const barcodeType = document.getElementById('barcode-type').value;
+                    const barcodeHeight = parseInt(document.getElementById('barcode-height').value);
+                    const barcodeWidth = parseFloat(document.getElementById('barcode-width').value);
+                    const showText = document.getElementById('barcode-text').checked;
+                    
+                    // Show barcode container
+                    barcodeSvg.style.display = 'block';
+
+                    // Generate barcode
+                    JsBarcode(barcodeSvg, content, {
+                        format: barcodeType,
+                        height: barcodeHeight,
+                        width: barcodeWidth,
+                        displayValue: showText,
+                        lineColor: color,
+                        background: "#FFFFFF",
+                        // JsBarcode automatically handles format-specific text display based on displayValue
+                    });
+                    
+                    // Show results
+                    qrResult.classList.remove('hidden');
+                    qrResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } catch (error) {
+                    showError(`Error generating barcode: ${error.message}`);
+                    console.error(error);
+                }
+            } else {
+                // Generate QR code
+                qrCanvas.style.display = 'block';
+                QRCode.toCanvas(qrCanvas, content, {
+                    width: size,
+                    margin: 1,
+                    color: {
+                        dark: color,
+                        light: '#FFFFFF'
+                    }
+                }, (error) => {
+                    if (error) {
+                        showError('Error generating QR code');
+                        console.error(error);
+                        return;
+                    }
+                    
+                    // Show QR code and download button
+                    qrResult.classList.remove('hidden');
+                    
+                    // Scroll to result if needed
+                    qrResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            }
+        }
+        
+        function downloadQRCode() {
+            const qrType = qrTypeSelect.value;
+            const link = document.createElement('a');
+            
+            if (qrType === 'barcode') {
+                // For barcodes, convert SVG to PNG
+                const barcodeSvg = document.getElementById('barcode-svg');
+                const barcodeType = document.getElementById('barcode-type').value;
+                
+                // Create a canvas element to convert SVG to PNG
+                const canvas = document.createElement('canvas');
+                // Get the computed style of the SVG to get its actual rendered dimensions
+                const svgComputedStyle = window.getComputedStyle(barcodeSvg);
+                const svgWidth = parseFloat(svgComputedStyle.width);
+                const svgHeight = parseFloat(svgComputedStyle.height);
+
+                canvas.width = svgWidth;
+                canvas.height = svgHeight;
+                const ctx = canvas.getContext('2d');
+                
+                // Set white background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Convert SVG to data URL
+                const svgData = new XMLSerializer().serializeToString(barcodeSvg);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                const DOMURL = window.URL || window.webkitURL || window;
+                const svgUrl = DOMURL.createObjectURL(svgBlob);
+                
+                // Create a temporary image to draw the SVG on canvas
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, svgWidth, svgHeight); // Draw image with computed dimensions
+                    DOMURL.revokeObjectURL(svgUrl);
+                    
+                    // Download the resulting image
+                    link.download = `barcode-${barcodeType.toLowerCase()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                };
+                img.src = svgUrl;
+            } else {
+                // For QR codes, download the canvas directly
+                link.download = `qrcode-${qrType}.png`;
+                link.href = qrCanvas.toDataURL('image/png');
+                link.click();
+            }
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            qrResult.classList.add('hidden');
+        }
+        
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        // Initial form display on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('link-form').classList.remove('hidden');
+            // Trigger change event to ensure correct hint for barcode on load
+            if (barcodeType) {
+                barcodeType.dispatchEvent(new Event('change'));
+            }
+        });
+
+    </script>
+</body>
+</html>
