@@ -1,0 +1,487 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Choice Quiz Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Custom styles for radio buttons */
+        input[type="radio"] {
+            width: 1.2em;
+            height: 1.2em;
+            accent-color: #5D5CDE;
+        }
+        .dark input[type="radio"] {
+            accent-color: #7a79f1;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen transition-colors duration-300">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-primary dark:text-indigo-400">Bible Quiz <br>聖經問答挑戰 </h1>
+        
+        <!-- Quiz Section -->
+        <div id="quizSection" class="fade-in">
+            <div id="quizContainer" class="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="text-sm font-medium">Question <span id="currentQuestionNum">1</span>/<span id="totalQuestions">10</span></div>
+                    <div class="text-sm font-medium">Score: <span id="score">0</span></div>
+                </div>
+                
+                <div class="flex justify-between items-center mb-2">
+                    <div id="questionDisplay" class="text-lg font-medium"></div>
+                    <div id="pointsDisplay" class="text-sm font-semibold px-3 py-1 bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 rounded-full">
+                        Points: <span id="questionPoints">1</span>
+                    </div>
+                </div>
+                
+                <div id="optionsContainer" class="space-y-3 mb-6">
+                    <!-- Options will be generated here -->
+                </div>
+                
+                <div id="feedback" class="mb-4 p-3 rounded-md hidden"></div>
+                
+                <div class="flex justify-between gap-2">
+                    <button id="prevBtn" class="py-2 px-4 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-md transition-colors">
+                        Previous
+                    </button>
+                    <button id="skipBtn" class="py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-md transition-colors">
+                        Skip
+                    </button>
+                    <button id="nextBtn" class="py-2 px-4 bg-primary hover:bg-indigo-600 text-white font-medium rounded-md transition-colors dark:bg-indigo-600 dark:hover:bg-indigo-700">
+                        Next
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div id="resultsContainer" class="mt-6 bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md text-center hidden">
+                <h2 class="text-2xl font-bold mb-3">Quiz Complete!</h2>
+                <p class="text-lg mb-4">Your final score: <span id="finalScore">0</span>/<span id="totalScore">10</span></p>
+                <div id="scorePercentage" class="text-xl font-bold mb-4"></div>
+                <button id="playAgainBtn" class="py-2 px-6 bg-primary hover:bg-indigo-600 text-white font-medium rounded-md transition-colors dark:bg-indigo-600 dark:hover:bg-indigo-700">
+                    Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // Quiz Questions Database - Add your questions here
+        const allQuestions = [
+            // Add your questions below in this format:
+            // You can customize:
+            // - The number of options (any number, not just 4)
+            // - The points value of each question (default is 1 if not specified)
+            {
+                question: "聖經最長是哪卷？",
+                options: ["以賽亞書", "詩篇", "那鴻書", "啓示錄"],
+                correctAnswer: 1,
+                points: 1
+            }, 
+            {
+                question: "聖經第二長是哪卷？", 
+                options: ["以賽亞書", "詩篇", "那鴻書", "啓示錄"],
+                correctAnswer: 0, 
+                points: 1
+            }, 
+            {
+                question: "上帝應許誰的子孫多如天上星地上沙？", 
+                options: ["亞伯拉罕", "雅各", "亞當", "以撒", "羅得"],
+                correctAnswer: 0, 
+                points: 1
+            }, 
+            {
+                question: "摩押人的祖宗摩押是誰的兒子？", 
+                options: ["羅得", "亞伯拉罕", "雅各", "亞當", "以撒"],
+                correctAnswer: 0, 
+                points: 2
+            }, 
+            {
+                question: "耶穌生於什麼地方？", 
+                options: ["伯利恆", "耶路撒冷", "天堂", "撒瑪利亞"],
+                correctAnswer: 0, 
+                points: 1
+            }, 
+            {
+                question: "東方博士拜主時獻上哪些禮物？", 
+                options: ["黃金、乳香、沒藥", "銀子、乳膏、草藥", "黃金、書卷、沒藥", "黃金、乳香、麵包"],
+                correctAnswer: 0, 
+                points: 2
+            }, 
+            {
+                question: "施洗約翰的父親叫什麼名字？", 
+                options: ["撒迦利亞", "雅各", "亞伯拉罕", "大衛"],
+                correctAnswer: 0, 
+                points: 1
+            }, 
+            {
+                question: "耶穌出自以色列哪個支派？", 
+                options: ["猶大", "流便", "利未", "便雅憫"],
+                correctAnswer: 0, 
+                points: 1
+            }, 
+            {
+                question: "哪位先知被扔進獅子坑卻平安？", 
+                options: ["但以理", "約拿", "以利亞", "耶利米"],
+                correctAnswer: 0, 
+                points: 1
+            }, 
+            {
+                question: "哪位先知被大魚吞入腹卻平安？", 
+                options: ["但以理", "約拿", "以利亞", "耶利米"],
+                correctAnswer: 1, 
+                points: 1
+            },
+            {
+                question: "哪位先知被稱為烈火先知？", 
+                options: ["但以理", "約拿", "以利亞", "耶利米"],
+                correctAnswer: 2, 
+                points: 2
+            },
+            {
+                question: "哪位先知被稱為流淚的先知？", 
+                options: ["但以理", "約拿", "以利亞", "耶利米"],
+                correctAnswer: 3, 
+                points: 2
+            },
+        ];
+        
+        // Quiz data and state
+        const quizData = {
+            questions: [],
+            currentQuestion: 0,
+            score: 0,
+            answered: []
+        };
+        
+        // DOM Elements
+        const quizSection = document.getElementById('quizSection');
+        const quizContainer = document.getElementById('quizContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const currentQuestionNum = document.getElementById('currentQuestionNum');
+        const totalQuestions = document.getElementById('totalQuestions');
+        const scoreElement = document.getElementById('score');
+        const questionDisplay = document.getElementById('questionDisplay');
+        const questionPoints = document.getElementById('questionPoints');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const feedback = document.getElementById('feedback');
+        const prevBtn = document.getElementById('prevBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const finalScore = document.getElementById('finalScore');
+        const totalScore = document.getElementById('totalScore');
+        const scorePercentage = document.getElementById('scorePercentage');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        
+        // Initialize the quiz on page load
+        document.addEventListener('DOMContentLoaded', startQuiz);
+        
+        // Function to shuffle array (Fisher-Yates algorithm)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        // Start a new quiz
+        function startQuiz() {
+            // Check if we have enough questions
+            if (allQuestions.length < 10) {
+                alert('Please add at least 10 questions in the HTML file.');
+                return;
+            }
+            
+            // Get 10 random questions from the database
+            const shuffledQuestions = shuffleArray([...allQuestions]);
+            quizData.questions = shuffledQuestions.slice(0, 10);
+            quizData.unusedQuestions = shuffledQuestions.slice(10); // Store remaining questions for skipping
+            
+            quizData.currentQuestion = 0;
+            quizData.score = 0;
+            quizData.answered = Array(10).fill(false);
+            quizData.maxScore = calculateMaxScore();
+            
+            totalQuestions.textContent = 10;
+            scoreElement.textContent = quizData.score;
+            
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            
+            loadQuestion();
+            updateNavButtons();
+        }
+        
+        // Calculate the maximum possible score
+        function calculateMaxScore() {
+            return quizData.questions.reduce((total, question) => {
+                return total + (question.points || 1);
+            }, 0);
+        }
+        
+        // Load current question
+        function loadQuestion() {
+            const question = quizData.questions[quizData.currentQuestion];
+            currentQuestionNum.textContent = quizData.currentQuestion + 1;
+            
+            questionDisplay.textContent = question.question;
+            questionPoints.textContent = question.points || 1;
+            
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+            
+            // If this is the first time viewing this question, randomize option order
+            if (!quizData.answered[quizData.currentQuestion]) {
+                // Store original options and correct answer
+                const originalOptions = [...question.options];
+                const correctOption = originalOptions[question.correctAnswer];
+                
+                // Create mapping for shuffled options
+                const optionMapping = [];
+                const shuffledOptions = [];
+                
+                // Create array to track which positions are filled
+                const availablePositions = Array.from({length: originalOptions.length}, (_, i) => i);
+                
+                // Randomly place each option
+                originalOptions.forEach((option, originalIndex) => {
+                    // Select a random available position
+                    const randomPositionIndex = Math.floor(Math.random() * availablePositions.length);
+                    const newPosition = availablePositions[randomPositionIndex];
+                    
+                    // Remove this position from available positions
+                    availablePositions.splice(randomPositionIndex, 1);
+                    
+                    // Store the option in its new position
+                    shuffledOptions[newPosition] = option;
+                    
+                    // Track where each original option went
+                    optionMapping[originalIndex] = newPosition;
+                });
+                
+                // Update question object with shuffled options and new correct answer index
+                question.shuffledOptions = shuffledOptions;
+                question.shuffledCorrectAnswer = optionMapping[question.correctAnswer];
+            }
+            
+            // Use the shuffled options if available
+            const displayOptions = question.shuffledOptions || question.options;
+            const correctAnswerIndex = question.shuffledCorrectAnswer !== undefined ? 
+                question.shuffledCorrectAnswer : question.correctAnswer;
+            
+            // Generate option buttons
+            displayOptions.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'flex items-start';
+                
+                const radioInput = document.createElement('input');
+                radioInput.type = 'radio';
+                radioInput.name = 'quizOption';
+                radioInput.id = `quizOption${index}`;
+                radioInput.value = index;
+                radioInput.className = 'mt-1 mr-3';
+                
+                // If this question was previously answered, check the selected option
+                if (quizData.answered[quizData.currentQuestion] && 
+                    quizData.answered[quizData.currentQuestion].selected === index) {
+                    radioInput.checked = true;
+                }
+                
+                const label = document.createElement('label');
+                label.htmlFor = `quizOption${index}`;
+                label.className = 'flex-1 cursor-pointer';
+                label.textContent = option;
+                
+                optionDiv.appendChild(radioInput);
+                optionDiv.appendChild(label);
+                optionsContainer.appendChild(optionDiv);
+                
+                // Add click handler for the whole option div
+                optionDiv.addEventListener('click', () => {
+                    radioInput.checked = true;
+                    checkAnswer(index);
+                });
+            });
+            
+            // Show feedback if already answered
+            if (quizData.answered[quizData.currentQuestion]) {
+                showFeedback(quizData.answered[quizData.currentQuestion].correct);
+            } else {
+                feedback.classList.add('hidden');
+            }
+        }
+        
+        // Check the selected answer
+        function checkAnswer(selectedIndex) {
+            const question = quizData.questions[quizData.currentQuestion];
+            const correctAnswerIndex = question.shuffledCorrectAnswer !== undefined ? 
+                question.shuffledCorrectAnswer : question.correctAnswer;
+            const correct = selectedIndex === correctAnswerIndex;
+            
+            // If not answered before, update score
+            if (!quizData.answered[quizData.currentQuestion]) {
+                if (correct) {
+                    // Add points value for this question
+                    const points = question.points || 1;
+                    quizData.score += points;
+                    scoreElement.textContent = quizData.score;
+                }
+                
+                quizData.answered[quizData.currentQuestion] = {
+                    selected: selectedIndex,
+                    correct: correct
+                };
+            }
+            
+            showFeedback(correct);
+            updateNavButtons();
+        }
+        
+        // Show feedback for current answer
+        function showFeedback(correct) {
+            feedback.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'dark:bg-green-900', 'dark:text-green-200', 'dark:bg-red-900', 'dark:text-red-200');
+            
+            if (correct) {
+                feedback.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+                feedback.textContent = 'Correct! Well done!';
+            } else {
+                feedback.classList.add('bg-red-100', 'text-red-800', 'dark:bg-red-900', 'dark:text-red-200');
+                const question = quizData.questions[quizData.currentQuestion];
+                const correctAnswerIndex = question.shuffledCorrectAnswer !== undefined ? 
+                    question.shuffledCorrectAnswer : question.correctAnswer;
+                const displayOptions = question.shuffledOptions || question.options;
+                const correctAnswerText = displayOptions[correctAnswerIndex];
+                feedback.textContent = `Incorrect. The correct answer is: ${correctAnswerText}`;
+            }
+        }
+        
+        // Handle navigation
+        prevBtn.addEventListener('click', () => {
+            if (quizData.currentQuestion > 0) {
+                quizData.currentQuestion--;
+                loadQuestion();
+                updateNavButtons();
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (quizData.currentQuestion < quizData.questions.length - 1) {
+                quizData.currentQuestion++;
+                loadQuestion();
+                updateNavButtons();
+            } else {
+                // If all questions are answered, show the final results
+                if (allQuestionsAnswered()) {
+                    showResults();
+                } else {
+                    if (confirm('You have not answered all questions. Do you want to finish the quiz anyway?')) {
+                        showResults();
+                    }
+                }
+            }
+        });
+        
+        // Skip question button
+        skipBtn.addEventListener('click', () => {
+            // Only allow skipping if the question hasn't been answered yet
+            if (quizData.answered[quizData.currentQuestion]) {
+                alert('You have already answered this question. You can only skip unanswered questions.');
+                return;
+            }
+            
+            // Check if we have any unused questions left
+            if (quizData.unusedQuestions.length === 0) {
+                alert('No more questions available to skip to.');
+                return;
+            }
+            
+            // Get a new question from the unused questions
+            const newQuestion = quizData.unusedQuestions.pop();
+            
+            // Replace the current question with the new one
+            quizData.questions[quizData.currentQuestion] = newQuestion;
+            
+            // Load the new question
+            loadQuestion();
+        });
+        
+        // Check if all questions are answered
+        function allQuestionsAnswered() {
+            return quizData.answered.every(answer => answer !== false);
+        }
+        
+        // Update navigation buttons
+        function updateNavButtons() {
+            prevBtn.disabled = quizData.currentQuestion === 0;
+            prevBtn.classList.toggle('opacity-50', prevBtn.disabled);
+            
+            if (quizData.currentQuestion === quizData.questions.length - 1) {
+                nextBtn.textContent = 'Finish Quiz';
+            } else {
+                nextBtn.textContent = 'Next';
+            }
+        }
+        
+        // Show final results
+        function showResults() {
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+            
+            finalScore.textContent = quizData.score;
+            totalScore.textContent = quizData.maxScore;
+            
+            const percentage = Math.round((quizData.score / quizData.maxScore) * 100);
+            let message = '';
+            
+            if (percentage >= 90) {
+                message = 'Excellent!';
+            } else if (percentage >= 70) {
+                message = 'Good job!';
+            } else if (percentage >= 50) {
+                message = 'Nice try!';
+            } else {
+                message = 'Keep practicing!';
+            }
+            
+            scorePercentage.textContent = `${percentage}% - ${message}`;
+        }
+        
+        // Play again button
+        playAgainBtn.addEventListener('click', startQuiz);
+    </script>
+
+
+</body></html>
