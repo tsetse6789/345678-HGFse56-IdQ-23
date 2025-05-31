@@ -685,32 +685,38 @@
             if (qrType === 'barcode') {
                 try {
                     // Get barcode options
-                    const barcodeType = document.getElementById('barcode-type').value;
-                    const barcodeHeight = parseInt(document.getElementById('barcode-height').value);
-                    const barcodeWidth = parseFloat(document.getElementById('barcode-width').value);
-                    const showText = document.getElementById('barcode-text').checked;
-                    
-                    // Show barcode container
+                    const barcodeTypeVal = document.getElementById('barcode-type').value;
+                    const barcodeHeightVal = parseInt(document.getElementById('barcode-height').value);
+                    const barcodeWidthVal = parseFloat(document.getElementById('barcode-width').value);
+                    const showTextVal = document.getElementById('barcode-text').checked;
+            
+                    // Make sure SVG is visible and has a reasonable size
+                    barcodeSvg.classList.remove('hidden');
                     barcodeSvg.style.display = 'block';
+                    barcodeSvg.setAttribute('width', 300);
+                    barcodeSvg.setAttribute('height', barcodeHeightVal + (showTextVal ? 30 : 10)); // allow space for text
+
+                    // Clear previous SVG
+                    barcodeSvg.innerHTML = '';
 
                     // Generate barcode
                     JsBarcode(barcodeSvg, content, {
-                        format: barcodeType,
-                        height: barcodeHeight,
-                        width: barcodeWidth,
-                        displayValue: showText,
+                        format: barcodeTypeVal,
+                        height: barcodeHeightVal,
+                        width: barcodeWidthVal,
+                        displayValue: showTextVal,
                         lineColor: color,
                         background: "#FFFFFF",
-                        // JsBarcode automatically handles format-specific text display based on displayValue
                     });
-                    
-                    // Show results
+
+                    qrCanvas.style.display = 'none'; // Hide QR canvas
                     qrResult.classList.remove('hidden');
                     qrResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 } catch (error) {
                     showError(`Error generating barcode: ${error.message}`);
                     console.error(error);
                 }
+                return;
             } else {
                 // Generate QR code
                 qrCanvas.style.display = 'block';
