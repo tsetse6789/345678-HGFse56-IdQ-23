@@ -1,0 +1,859 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Time Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4B4BC8'
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+    <div id="app" class="min-h-screen">
+        <!-- Loading Screen -->
+        <div id="loading" class="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+
+        <!-- Login/Signup Screen -->
+        <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4">
+            <div class="w-full max-w-md">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 fade-in">
+                    <h1 class="text-3xl font-bold text-center mb-8">Real Time Chat</h1>
+                    
+                    <div class="flex mb-6">
+                        <button id="login-tab" class="flex-1 py-3 text-center font-medium border-b-2 border-primary text-primary">Login</button>
+                        <button id="signup-tab" class="flex-1 py-3 text-center font-medium border-b-2 border-transparent text-gray-500">Sign Up</button>
+                    </div>
+
+                    <form id="auth-form" class="space-y-6">
+                        <div id="signup-fields" class="hidden space-y-6">
+                            <input type="text" id="signup-username" placeholder="Username" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700">
+                        </div>
+                        
+                        <input type="email" id="auth-email" placeholder="Email" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" required="">
+                        
+                        <input type="password" id="auth-password" placeholder="Password" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700" required="">
+                        
+                        <div id="login-options" class="flex items-center justify-between">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="remember-me" class="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary">
+                                <span class="ml-2 text-sm">Remember me</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" id="auth-submit" class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 px-4 rounded-lg transition duration-200">
+                            Login
+                        </button>
+                    </form>
+
+                    <div id="auth-error" class="hidden mt-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-app" class="hidden h-screen flex flex-col">
+            <!-- Header -->
+            <header class="bg-primary text-white p-4 flex items-center justify-between">
+                <h1 class="text-xl font-bold">Chat App</h1>
+                <div class="flex items-center space-x-3">
+                    <button id="profile-btn" class="p-2 rounded-full hover:bg-white hover:bg-opacity-20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </button>
+                    <button id="settings-btn" class="p-2 rounded-full hover:bg-white hover:bg-opacity-20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat Rooms List -->
+            <div id="rooms-view" class="flex-1 flex flex-col">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold">Chat Rooms</h2>
+                        <button id="create-room-btn" class="bg-primary text-white px-4 py-2 rounded-lg text-sm">
+                            Create Room
+                        </button>
+                    </div>
+                    <input type="text" id="room-search" placeholder="Search rooms..." class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                </div>
+                
+                <div id="rooms-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- Rooms will be populated here -->
+                </div>
+            </div>
+
+            <!-- Chat Room View -->
+            <div id="chat-view" class="hidden flex-1 flex flex-col">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button id="back-to-rooms" class="mr-3 p-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <h3 id="chat-room-name" class="text-lg font-semibold"></h3>
+                    </div>
+                    <button id="room-settings-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- Messages will be populated here -->
+                </div>
+                
+                <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                        <button id="send-message" class="bg-primary text-white p-3 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 slide-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">Profile</h3>
+                    <button id="close-profile" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Username</label>
+                        <input type="text" id="profile-username" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Profile Picture URL</label>
+                        <input type="url" id="profile-pic" placeholder="https://..." class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button id="save-profile" class="flex-1 bg-primary text-white py-3 rounded-lg">Save</button>
+                        <button id="view-friends" class="flex-1 bg-gray-500 text-white py-3 rounded-lg">Friends</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 slide-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">Settings</h3>
+                    <button id="close-settings" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <button id="logout-btn" class="w-full text-left p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Logout
+                    </button>
+                    
+                    <button id="delete-account-btn" class="w-full text-left p-4 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 flex items-center">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Room Modal -->
+        <div id="create-room-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 slide-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">Create Room</h3>
+                    <button id="close-create-room" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Room Name</label>
+                        <input type="text" id="room-name-input" placeholder="Enter room name..." class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                    </div>
+                    
+                    <button id="create-room-submit" class="w-full bg-primary text-white py-3 rounded-lg">Create Room</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Friends Modal -->
+        <div id="friends-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 slide-up max-h-96 flex flex-col">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">Friends</h3>
+                    <button id="close-friends" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex space-x-2">
+                        <input type="email" id="friend-email" placeholder="Friend's email..." class="flex-1 px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                        <button id="add-friend-btn" class="bg-primary text-white px-4 py-2 rounded-lg">Add</button>
+                    </div>
+                </div>
+                
+                <div id="friends-list" class="flex-1 overflow-y-auto space-y-2">
+                    <!-- Friends will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 slide-up">
+                <h3 id="confirm-title" class="text-lg font-bold mb-4"></h3>
+                <p id="confirm-message" class="text-gray-600 dark:text-gray-300 mb-6"></p>
+                <div class="flex space-x-3">
+                    <button id="confirm-cancel" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
+                    <button id="confirm-ok" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules using static imports (better Android Chrome compatibility)
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+        import { getDatabase, ref, set, get, push, onValue, off, remove, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js';
+        
+        console.log('Starting Firebase app initialization...');
+        console.log('Firebase modules loaded successfully');
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDr12y9qAWiTFaHPVYaCKKU1fgYCXyK_ao",
+            authDomain: "real-time-chat-a665b.firebaseapp.com",
+            databaseURL: "https://real-time-chat-a665b-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "real-time-chat-a665b",
+            storageBucket: "real-time-chat-a665b.firebasestorage.app",
+            messagingSenderId: "203807829995",
+            appId: "1:203807829995:web:b68313623c9764847833ae",
+            measurementId: "G-EFF5SJNKPV"
+        };
+
+        // Initialize Firebase
+        let app, auth, database;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            database = getDatabase(app);
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize Firebase:', error);
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('auth-error').textContent = 'Failed to initialize Firebase. Please refresh the page.';
+            document.getElementById('auth-error').classList.remove('hidden');
+        }
+
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Global variables
+        let currentUser = null;
+        let currentRoom = null;
+        let messagesListener = null;
+        let roomsListener = null;
+
+        // DOM elements
+        const loading = document.getElementById('loading');
+        const authScreen = document.getElementById('auth-screen');
+        const mainApp = document.getElementById('main-app');
+        const loginTab = document.getElementById('login-tab');
+        const signupTab = document.getElementById('signup-tab');
+        const authForm = document.getElementById('auth-form');
+        const signupFields = document.getElementById('signup-fields');
+        const loginOptions = document.getElementById('login-options');
+        const authSubmit = document.getElementById('auth-submit');
+        const authError = document.getElementById('auth-error');
+
+        // Initialize app
+        function init() {
+            console.log('Initializing app...');
+            setupEventListeners();
+            
+            // Add timeout to prevent infinite loading
+            const loadingTimeout = setTimeout(() => {
+                console.log('Loading timeout - forcing auth screen');
+                loading.classList.add('hidden');
+                showAuthScreen();
+            }, 10000); // 10 second timeout
+            
+            try {
+                onAuthStateChanged(auth, (user) => {
+                    console.log('Auth state changed:', user ? 'User logged in' : 'No user');
+                    clearTimeout(loadingTimeout);
+                    
+                    if (user) {
+                        currentUser = user;
+                        console.log('Loading main app for user:', user.uid);
+                        showMainApp();
+                        loadUserProfile();
+                        loadRooms();
+                    } else {
+                        console.log('Showing auth screen');
+                        showAuthScreen();
+                    }
+                    loading.classList.add('hidden');
+                }, (error) => {
+                    console.error('Auth state change error:', error);
+                    clearTimeout(loadingTimeout);
+                    loading.classList.add('hidden');
+                    showAuthScreen();
+                });
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                clearTimeout(loadingTimeout);
+                loading.classList.add('hidden');
+                showAuthScreen();
+            }
+        }
+
+        function setupEventListeners() {
+            // Auth form switching
+            loginTab.addEventListener('click', () => switchToLogin());
+            signupTab.addEventListener('click', () => switchToSignup());
+            authForm.addEventListener('submit', handleAuth);
+
+            // Main app navigation
+            document.getElementById('profile-btn').addEventListener('click', () => showModal('profile-modal'));
+            document.getElementById('settings-btn').addEventListener('click', () => showModal('settings-modal'));
+            document.getElementById('create-room-btn').addEventListener('click', () => showModal('create-room-modal'));
+            document.getElementById('back-to-rooms').addEventListener('click', showRoomsView);
+
+            // Modal controls
+            document.getElementById('close-profile').addEventListener('click', () => hideModal('profile-modal'));
+            document.getElementById('close-settings').addEventListener('click', () => hideModal('settings-modal'));
+            document.getElementById('close-create-room').addEventListener('click', () => hideModal('create-room-modal'));
+            document.getElementById('close-friends').addEventListener('click', () => hideModal('friends-modal'));
+
+            // Profile actions
+            document.getElementById('save-profile').addEventListener('click', saveProfile);
+            document.getElementById('view-friends').addEventListener('click', () => {
+                hideModal('profile-modal');
+                showModal('friends-modal');
+                loadFriends();
+            });
+
+            // Settings actions
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            document.getElementById('delete-account-btn').addEventListener('click', confirmDeleteAccount);
+
+            // Room creation
+            document.getElementById('create-room-submit').addEventListener('click', createRoom);
+
+            // Chat functionality
+            document.getElementById('send-message').addEventListener('click', sendMessage);
+            document.getElementById('message-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // Friends
+            document.getElementById('add-friend-btn').addEventListener('click', addFriend);
+
+            // Confirmation modal
+            document.getElementById('confirm-cancel').addEventListener('click', () => hideModal('confirm-modal'));
+        }
+
+        function switchToLogin() {
+            loginTab.classList.add('border-primary', 'text-primary');
+            loginTab.classList.remove('border-transparent', 'text-gray-500');
+            signupTab.classList.remove('border-primary', 'text-primary');
+            signupTab.classList.add('border-transparent', 'text-gray-500');
+            signupFields.classList.add('hidden');
+            loginOptions.classList.remove('hidden');
+            authSubmit.textContent = 'Login';
+        }
+
+        function switchToSignup() {
+            signupTab.classList.add('border-primary', 'text-primary');
+            signupTab.classList.remove('border-transparent', 'text-gray-500');
+            loginTab.classList.remove('border-primary', 'text-primary');
+            loginTab.classList.add('border-transparent', 'text-gray-500');
+            signupFields.classList.remove('hidden');
+            loginOptions.classList.add('hidden');
+            authSubmit.textContent = 'Sign Up';
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const isSignup = authSubmit.textContent === 'Sign Up';
+            
+            try {
+                if (isSignup) {
+                    const username = document.getElementById('signup-username').value;
+                    if (!username.trim()) {
+                        showError('Username is required');
+                        return;
+                    }
+                    
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await set(ref(database, `users/${userCredential.user.uid}`), {
+                        username: username.trim(),
+                        email: email,
+                        profilePic: '',
+                        createdAt: Date.now()
+                    });
+                } else {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    
+                    // Check if user exists in database
+                    const userSnapshot = await get(ref(database, `users/${userCredential.user.uid}`));
+                    if (!userSnapshot.exists()) {
+                        // User authenticated but no database record - sign them out and show error
+                        await signOut(auth);
+                        showError('Account not found in database. Please contact support or create a new account.');
+                        return;
+                    }
+                }
+                hideError();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function showError(message) {
+            authError.textContent = message;
+            authError.classList.remove('hidden');
+        }
+
+        function hideError() {
+            authError.classList.add('hidden');
+        }
+
+        function showAuthScreen() {
+            authScreen.classList.remove('hidden');
+            mainApp.classList.add('hidden');
+        }
+
+        function showMainApp() {
+            authScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        async function loadUserProfile() {
+            try {
+                const snapshot = await get(ref(database, `users/${currentUser.uid}`));
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    document.getElementById('profile-username').value = userData.username || '';
+                    document.getElementById('profile-pic').value = userData.profilePic || '';
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        async function saveProfile() {
+            const username = document.getElementById('profile-username').value.trim();
+            const profilePic = document.getElementById('profile-pic').value.trim();
+            
+            if (!username) {
+                alert('Username is required');
+                return;
+            }
+
+            try {
+                await set(ref(database, `users/${currentUser.uid}`), {
+                    username,
+                    email: currentUser.email,
+                    profilePic,
+                    updatedAt: Date.now()
+                });
+                hideModal('profile-modal');
+            } catch (error) {
+                alert('Error saving profile: ' + error.message);
+            }
+        }
+
+        async function logout() {
+            try {
+                await signOut(auth);
+                hideModal('settings-modal');
+            } catch (error) {
+                alert('Error logging out: ' + error.message);
+            }
+        }
+
+        function confirmDeleteAccount() {
+            document.getElementById('confirm-title').textContent = 'Delete Account';
+            document.getElementById('confirm-message').textContent = 'Are you sure you want to delete your account? This action cannot be undone and will delete all your data.';
+            document.getElementById('confirm-ok').onclick = async () => {
+                hideModal('confirm-modal');
+                
+                // Second confirmation
+                document.getElementById('confirm-title').textContent = 'Final Confirmation';
+                document.getElementById('confirm-message').textContent = 'This is your final warning. Your account and ALL data will be permanently deleted. Are you absolutely sure?';
+                document.getElementById('confirm-ok').onclick = deleteAccount;
+                showModal('confirm-modal');
+            };
+            hideModal('settings-modal');
+            showModal('confirm-modal');
+        }
+
+        async function deleteAccount() {
+            try {
+                // Delete user data from database
+                await remove(ref(database, `users/${currentUser.uid}`));
+                
+                // Delete user account
+                await deleteUser(currentUser);
+                
+                hideModal('confirm-modal');
+            } catch (error) {
+                alert('Error deleting account: ' + error.message);
+            }
+        }
+
+        async function createRoom() {
+            const roomName = document.getElementById('room-name-input').value.trim();
+            if (!roomName) {
+                alert('Room name is required');
+                return;
+            }
+
+            try {
+                const roomRef = push(ref(database, 'rooms'));
+                await set(roomRef, {
+                    name: roomName,
+                    createdAt: Date.now(),
+                    createdBy: currentUser.uid,
+                    users: {
+                        [currentUser.uid]: {
+                            joinedAt: Date.now(),
+                            lastSeen: Date.now(),
+                            role: 'host'
+                        }
+                    }
+                });
+                
+                document.getElementById('room-name-input').value = '';
+                hideModal('create-room-modal');
+                loadRooms();
+            } catch (error) {
+                alert('Error creating room: ' + error.message);
+            }
+        }
+
+        function loadRooms() {
+            if (roomsListener) {
+                off(ref(database, 'rooms'), roomsListener);
+            }
+            
+            roomsListener = onValue(ref(database, 'rooms'), (snapshot) => {
+                const roomsList = document.getElementById('rooms-list');
+                roomsList.innerHTML = '';
+                
+                if (snapshot.exists()) {
+                    const rooms = snapshot.val();
+                    Object.entries(rooms).forEach(([roomId, roomData]) => {
+                        if (roomData.users && roomData.users[currentUser.uid]) {
+                            const roomElement = createRoomElement(roomId, roomData);
+                            roomsList.appendChild(roomElement);
+                        }
+                    });
+                }
+            });
+        }
+
+        function createRoomElement(roomId, roomData) {
+            const div = document.createElement('div');
+            div.className = 'p-4 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
+            div.onclick = () => openChatRoom(roomId, roomData);
+            
+            const isHost = roomData.createdBy === currentUser.uid;
+            
+            div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="font-semibold">${roomData.name}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            ${isHost ? 'Host' : 'Member'} • ${Object.keys(roomData.users || {}).length} members
+                        </p>
+                    </div>
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function openChatRoom(roomId, roomData) {
+            currentRoom = roomId;
+            document.getElementById('chat-room-name').textContent = roomData.name;
+            showChatView();
+            loadMessages();
+        }
+
+        function showRoomsView() {
+            document.getElementById('rooms-view').classList.remove('hidden');
+            document.getElementById('chat-view').classList.add('hidden');
+            if (messagesListener) {
+                off(ref(database, `rooms/${currentRoom}/messages`), messagesListener);
+                messagesListener = null;
+            }
+            currentRoom = null;
+        }
+
+        function showChatView() {
+            document.getElementById('rooms-view').classList.add('hidden');
+            document.getElementById('chat-view').classList.remove('hidden');
+        }
+
+        function loadMessages() {
+            if (messagesListener) {
+                off(ref(database, `rooms/${currentRoom}/messages`), messagesListener);
+            }
+            
+            messagesListener = onValue(ref(database, `rooms/${currentRoom}/messages`), (snapshot) => {
+                const messagesContainer = document.getElementById('messages-container');
+                messagesContainer.innerHTML = '';
+                
+                if (snapshot.exists()) {
+                    const messages = snapshot.val();
+                    const sortedMessages = Object.entries(messages).sort((a, b) => a[1].timestamp - b[1].timestamp);
+                    
+                    sortedMessages.forEach(([messageId, messageData]) => {
+                        const messageElement = createMessageElement(messageData);
+                        messagesContainer.appendChild(messageElement);
+                    });
+                    
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            });
+        }
+
+        async function createMessageElement(messageData) {
+            const div = document.createElement('div');
+            const isOwnMessage = messageData.senderId === currentUser.uid;
+            
+            div.className = `flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`;
+            
+            let senderName = 'Unknown';
+            try {
+                const senderSnapshot = await get(ref(database, `users/${messageData.senderId}`));
+                if (senderSnapshot.exists()) {
+                    senderName = senderSnapshot.val().username;
+                }
+            } catch (error) {
+                console.error('Error getting sender name:', error);
+            }
+            
+            div.innerHTML = `
+                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    isOwnMessage 
+                        ? 'bg-primary text-white' 
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
+                }">
+                    ${!isOwnMessage ? `<p class="text-xs opacity-75 mb-1">${senderName}</p>` : ''}
+                    <p>${messageData.text}</p>
+                    <p class="text-xs opacity-75 mt-1">
+                        ${new Date(messageData.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </p>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const text = messageInput.value.trim();
+            
+            if (!text || !currentRoom) return;
+            
+            try {
+                const messageRef = push(ref(database, `rooms/${currentRoom}/messages`));
+                await set(messageRef, {
+                    senderId: currentUser.uid,
+                    text,
+                    timestamp: Date.now()
+                });
+                
+                messageInput.value = '';
+            } catch (error) {
+                alert('Error sending message: ' + error.message);
+            }
+        }
+
+        async function addFriend() {
+            const friendEmail = document.getElementById('friend-email').value.trim();
+            if (!friendEmail) return;
+            
+            try {
+                // Find user by email
+                const usersSnapshot = await get(ref(database, 'users'));
+                let friendId = null;
+                
+                if (usersSnapshot.exists()) {
+                    const users = usersSnapshot.val();
+                    for (const [uid, userData] of Object.entries(users)) {
+                        if (userData.email === friendEmail && uid !== currentUser.uid) {
+                            friendId = uid;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!friendId) {
+                    alert('User not found');
+                    return;
+                }
+                
+                // Add friend
+                await set(ref(database, `users/${currentUser.uid}/friends/${friendId}`), true);
+                
+                document.getElementById('friend-email').value = '';
+                loadFriends();
+            } catch (error) {
+                alert('Error adding friend: ' + error.message);
+            }
+        }
+
+        async function loadFriends() {
+            try {
+                const friendsSnapshot = await get(ref(database, `users/${currentUser.uid}/friends`));
+                const friendsList = document.getElementById('friends-list');
+                friendsList.innerHTML = '';
+                
+                if (friendsSnapshot.exists()) {
+                    const friends = friendsSnapshot.val();
+                    
+                    for (const friendId of Object.keys(friends)) {
+                        const friendSnapshot = await get(ref(database, `users/${friendId}`));
+                        if (friendSnapshot.exists()) {
+                            const friendData = friendSnapshot.val();
+                            const friendElement = createFriendElement(friendId, friendData);
+                            friendsList.appendChild(friendElement);
+                        }
+                    }
+                } else {
+                    friendsList.innerHTML = '<p class="text-gray-500 text-center py-4">No friends yet</p>';
+                }
+            } catch (error) {
+                console.error('Error loading friends:', error);
+            }
+        }
+
+        function createFriendElement(friendId, friendData) {
+            const div = document.createElement('div');
+            div.className = 'p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between';
+            
+            div.innerHTML = `
+                <div class="flex items-center">
+                    ${friendData.profilePic ? 
+                        `<img src="${friendData.profilePic}" class="w-10 h-10 rounded-full mr-3" alt="Profile">` :
+                        `<div class="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full mr-3 flex items-center justify-center">
+                            <span class="text-lg font-semibold">${friendData.username.charAt(0).toUpperCase()}</span>
+                        </div>`
+                    }
+                    <div>
+                        <p class="font-medium">${friendData.username}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Friend</p>
+                    </div>
+                </div>
+                <button onclick="removeFriend('${friendId}')" class="text-red-500 hover:text-red-700 p-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            `;
+            
+            return div;
+        }
+
+        window.removeFriend = async function(friendId) {
+            try {
+                await remove(ref(database, `users/${currentUser.uid}/friends/${friendId}`));
+                loadFriends();
+            } catch (error) {
+                alert('Error removing friend: ' + error.message);
+            }
+        };
+
+        // Initialize the app
+        init();
+    </script>
+    
+    <!-- Fallback for browsers without ES module support -->
+    <script nomodule="">
+        console.log('ES modules not supported, showing fallback');
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('auth-error').textContent = 'Your browser does not support this app. Please update your browser.';
+        document.getElementById('auth-error').classList.remove('hidden');
+    </script>
+
+
+</body></html>
