@@ -35,7 +35,7 @@
         <div id="loading" class="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50">
             <div class="text-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p class="text-gray-600 dark:text-gray-400">Loading Chat App...</p>
+                <p class="text-gray-600 dark:text-gray-400">Loading Fun Chat App...</p>
             </div>
         </div>
 
@@ -317,8 +317,6 @@
                 auth = firebase.auth();
                 database = firebase.database();
                 console.log('Firebase initialized successfully');
-                
-                // Now that Firebase is ready, initialize the app
                 init();
             } catch (error) {
                 console.error('Failed to initialize Firebase:', error);
@@ -329,12 +327,10 @@
             }
         }
         
-        // Wait for both DOM and Firebase to be ready
         function startApp() {
             waitForFirebase(initializeFirebase);
         }
         
-        // Initialize when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', startApp);
         } else {
@@ -359,42 +355,30 @@
         const authSubmit = document.getElementById('auth-submit');
         const authError = document.getElementById('auth-error');
 
-        // Initialize app
         function init() {
-            console.log('Initializing app...');
             setupEventListeners();
-            
-            // Add timeout to prevent infinite loading
             const loadingTimeout = setTimeout(() => {
-                console.log('Loading timeout - forcing auth screen');
                 loading.classList.add('hidden');
                 showAuthScreen();
-            }, 10000); // 10 second timeout
-            
+            }, 10000);
             try {
                 auth.onAuthStateChanged((user) => {
-                    console.log('Auth state changed:', user ? 'User logged in' : 'No user');
                     clearTimeout(loadingTimeout);
-                    
                     if (user) {
                         currentUser = user;
-                        console.log('Loading main app for user:', user.uid);
                         showMainApp();
                         loadUserProfile();
                         loadRooms();
                     } else {
-                        console.log('Showing auth screen');
                         showAuthScreen();
                     }
                     loading.classList.add('hidden');
                 }, (error) => {
-                    console.error('Auth state change error:', error);
                     clearTimeout(loadingTimeout);
                     loading.classList.add('hidden');
                     showAuthScreen();
                 });
             } catch (error) {
-                console.error('Firebase initialization error:', error);
                 clearTimeout(loadingTimeout);
                 loading.classList.add('hidden');
                 showAuthScreen();
@@ -402,24 +386,20 @@
         }
 
         function setupEventListeners() {
-            // Auth form switching
             loginTab.addEventListener('click', () => switchToLogin());
             signupTab.addEventListener('click', () => switchToSignup());
             authForm.addEventListener('submit', handleAuth);
 
-            // Main app navigation
             document.getElementById('profile-btn').addEventListener('click', () => showModal('profile-modal'));
             document.getElementById('settings-btn').addEventListener('click', () => showModal('settings-modal'));
             document.getElementById('create-room-btn').addEventListener('click', () => showModal('create-room-modal'));
             document.getElementById('back-to-rooms').addEventListener('click', showRoomsView);
 
-            // Modal controls
             document.getElementById('close-profile').addEventListener('click', () => hideModal('profile-modal'));
             document.getElementById('close-settings').addEventListener('click', () => hideModal('settings-modal'));
             document.getElementById('close-create-room').addEventListener('click', () => hideModal('create-room-modal'));
             document.getElementById('close-friends').addEventListener('click', () => hideModal('friends-modal'));
 
-            // Profile actions
             document.getElementById('save-profile').addEventListener('click', saveProfile);
             document.getElementById('view-friends').addEventListener('click', () => {
                 hideModal('profile-modal');
@@ -427,23 +407,18 @@
                 loadFriends();
             });
 
-            // Settings actions
             document.getElementById('logout-btn').addEventListener('click', logout);
             document.getElementById('delete-account-btn').addEventListener('click', confirmDeleteAccount);
 
-            // Room creation
             document.getElementById('create-room-submit').addEventListener('click', createRoom);
 
-            // Chat functionality
             document.getElementById('send-message').addEventListener('click', sendMessage);
             document.getElementById('message-input').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendMessage();
             });
 
-            // Friends
             document.getElementById('add-friend-btn').addEventListener('click', addFriend);
 
-            // Confirmation modal
             document.getElementById('confirm-cancel').addEventListener('click', () => hideModal('confirm-modal'));
         }
 
@@ -494,18 +469,14 @@
                     });
                 } else {
                     const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                    
-                    // Check if user exists in database
                     const userSnapshot = await database.ref(`users/${userCredential.user.uid}`).once('value');
                     if (!userSnapshot.exists()) {
-                        // User authenticated but no database record - sign them out and show error
                         await auth.signOut();
                         showError('Account not found in database. Please contact support or create a new account.');
                         return;
                     }
                 }
             } catch (error) {
-                console.error('Auth error:', error);
                 showError(error.message);
             } finally {
                 authSubmit.disabled = false;
@@ -548,9 +519,7 @@
                     document.getElementById('profile-username').value = userData.username || '';
                     document.getElementById('profile-pic').value = userData.profilePic || '';
                 }
-            } catch (error) {
-                console.error('Error loading profile:', error);
-            }
+            } catch (error) { }
         }
 
         async function saveProfile() {
@@ -589,8 +558,6 @@
             document.getElementById('confirm-message').textContent = 'Are you sure you want to delete your account? This action cannot be undone and will delete all your data.';
             document.getElementById('confirm-ok').onclick = async () => {
                 hideModal('confirm-modal');
-                
-                // Second confirmation
                 document.getElementById('confirm-title').textContent = 'Final Confirmation';
                 document.getElementById('confirm-message').textContent = 'This is your final warning. Your account and ALL data will be permanently deleted. Are you absolutely sure?';
                 document.getElementById('confirm-ok').onclick = deleteAccount;
@@ -602,25 +569,21 @@
 
         async function deleteAccount() {
             try {
-                // Delete user data from database
                 await database.ref(`users/${currentUser.uid}`).remove();
-                
-                // Delete user account
                 await currentUser.delete();
-                
                 hideModal('confirm-modal');
             } catch (error) {
                 showCustomAlert('Error deleting account: ' + error.message);
             }
         }
 
+        // FIX: After creating a room, fetch it from DB before opening!
         async function createRoom() {
             const roomName = document.getElementById('room-name-input').value.trim();
             if (!roomName) {
                 showCustomAlert('Room name is required');
                 return;
             }
-
             try {
                 const roomRef = database.ref('rooms').push();
                 await roomRef.set({
@@ -635,55 +598,46 @@
                         }
                     }
                 });
-                
                 document.getElementById('room-name-input').value = '';
                 hideModal('create-room-modal');
-                loadRooms();
+                // Fetch the new room data and open it
+                const snapshot = await roomRef.once('value');
+                if (snapshot.exists()) {
+                    openChatRoom(snapshot.key, snapshot.val());
+                } else {
+                    showCustomAlert('Room created, but failed to open it. Please try again.');
+                    loadRooms();
+                }
             } catch (error) {
                 showCustomAlert('Error creating room: ' + error.message);
             }
         }
 
+        // FIX: Always fetch latest room data before opening any room!
         function loadRooms() {
             if (roomsListener) {
                 database.ref('rooms').off('value', roomsListener);
             }
-            
-            console.log('Loading rooms for user:', currentUser.uid);
-            
             roomsListener = database.ref('rooms').on('value', (snapshot) => {
-                console.log('Rooms data received:', snapshot.exists());
                 const roomsList = document.getElementById('rooms-list');
                 roomsList.innerHTML = '';
-                
                 if (snapshot.exists()) {
                     const rooms = snapshot.val();
-                    console.log('Total rooms in database:', Object.keys(rooms).length);
-                    
                     let userRoomsCount = 0;
                     Object.entries(rooms).forEach(([roomId, roomData]) => {
-                        console.log(`Checking room ${roomId}:`, roomData);
-                        console.log(`Room users:`, roomData.users);
-                        console.log(`User ${currentUser.uid} in room:`, roomData.users && roomData.users[currentUser.uid]);
-                        
                         if (roomData.users && roomData.users[currentUser.uid]) {
                             userRoomsCount++;
                             const roomElement = createRoomElement(roomId, roomData);
                             roomsList.appendChild(roomElement);
                         }
                     });
-                    
-                    console.log('User is in', userRoomsCount, 'rooms');
-                    
                     if (userRoomsCount === 0) {
                         roomsList.innerHTML = '<p class="text-gray-500 text-center py-4">No rooms yet. Create your first room!</p>';
                     }
                 } else {
-                    console.log('No rooms exist in database');
                     roomsList.innerHTML = '<p class="text-gray-500 text-center py-4">No rooms yet. Create your first room!</p>';
                 }
             }, (error) => {
-                console.error('Error loading rooms:', error);
                 showCustomAlert('Error loading rooms: ' + error.message);
             });
         }
@@ -691,10 +645,20 @@
         function createRoomElement(roomId, roomData) {
             const div = document.createElement('div');
             div.className = 'p-4 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
-            div.onclick = () => openChatRoom(roomId, roomData);
-            
+            div.onclick = async () => {
+                try {
+                    const roomSnapshot = await database.ref('rooms/' + roomId).once('value');
+                    if (roomSnapshot.exists()) {
+                        openChatRoom(roomId, roomSnapshot.val());
+                    } else {
+                        showCustomAlert('Room not found.');
+                        loadRooms();
+                    }
+                } catch (error) {
+                    showCustomAlert('Failed to open room: ' + error.message);
+                }
+            };
             const isHost = roomData.createdBy === currentUser.uid;
-            
             div.innerHTML = `
                 <div class="flex items-center justify-between">
                     <div>
@@ -706,7 +670,6 @@
                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
             `;
-            
             return div;
         }
 
@@ -736,15 +699,12 @@
             if (messagesListener) {
                 database.ref(`rooms/${currentRoom}/messages`).off('value', messagesListener);
             }
-            
             messagesListener = database.ref(`rooms/${currentRoom}/messages`).on('value', (snapshot) => {
                 const messagesContainer = document.getElementById('messages-container');
                 messagesContainer.innerHTML = '';
-                
                 if (snapshot.exists()) {
                     const messages = snapshot.val();
                     const sortedMessages = Object.entries(messages).sort((a, b) => a[1].timestamp - b[1].timestamp);
-                    
                     Promise.all(sortedMessages.map(([messageId, messageData]) => createMessageElement(messageData)))
                         .then(messageElements => {
                             messageElements.forEach(element => {
@@ -761,19 +721,14 @@
         async function createMessageElement(messageData) {
             const div = document.createElement('div');
             const isOwnMessage = messageData.senderId === currentUser.uid;
-            
             div.className = `flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`;
-            
             let senderName = 'Unknown';
             try {
                 const senderSnapshot = await database.ref(`users/${messageData.senderId}`).once('value');
                 if (senderSnapshot.exists()) {
                     senderName = senderSnapshot.val().username;
                 }
-            } catch (error) {
-                console.error('Error getting sender name:', error);
-            }
-            
+            } catch (error) {}
             div.innerHTML = `
                 <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                     isOwnMessage 
@@ -787,16 +742,13 @@
                     </p>
                 </div>
             `;
-            
             return div;
         }
 
         async function sendMessage() {
             const messageInput = document.getElementById('message-input');
             const text = messageInput.value.trim();
-            
             if (!text || !currentRoom) return;
-            
             try {
                 const messageRef = database.ref(`rooms/${currentRoom}/messages`).push();
                 await messageRef.set({
@@ -804,7 +756,6 @@
                     text,
                     timestamp: Date.now()
                 });
-                
                 messageInput.value = '';
             } catch (error) {
                 showCustomAlert('Error sending message: ' + error.message);
@@ -814,12 +765,9 @@
         async function addFriend() {
             const friendEmail = document.getElementById('friend-email').value.trim();
             if (!friendEmail) return;
-            
             try {
-                // Find user by email
                 const usersSnapshot = await database.ref('users').once('value');
                 let friendId = null;
-                
                 if (usersSnapshot.exists()) {
                     const users = usersSnapshot.val();
                     for (const [uid, userData] of Object.entries(users)) {
@@ -829,15 +777,11 @@
                         }
                     }
                 }
-                
                 if (!friendId) {
                     showCustomAlert('User not found');
                     return;
                 }
-                
-                // Add friend
                 await database.ref(`users/${currentUser.uid}/friends/${friendId}`).set(true);
-                
                 document.getElementById('friend-email').value = '';
                 loadFriends();
             } catch (error) {
@@ -850,10 +794,8 @@
                 const friendsSnapshot = await database.ref(`users/${currentUser.uid}/friends`).once('value');
                 const friendsList = document.getElementById('friends-list');
                 friendsList.innerHTML = '';
-                
                 if (friendsSnapshot.exists()) {
                     const friends = friendsSnapshot.val();
-                    
                     const friendElements = await Promise.all(
                         Object.keys(friends).map(async (friendId) => {
                             const friendSnapshot = await database.ref(`users/${friendId}`).once('value');
@@ -864,22 +806,18 @@
                             return null;
                         })
                     );
-                    
                     friendElements.filter(el => el !== null).forEach(element => {
                         friendsList.appendChild(element);
                     });
                 } else {
                     friendsList.innerHTML = '<p class="text-gray-500 text-center py-4">No friends yet</p>';
                 }
-            } catch (error) {
-                console.error('Error loading friends:', error);
-            }
+            } catch (error) {}
         }
 
         function createFriendElement(friendId, friendData) {
             const div = document.createElement('div');
             div.className = 'p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between';
-            
             div.innerHTML = `
                 <div class="flex items-center">
                     ${friendData.profilePic ? 
@@ -899,7 +837,6 @@
                     </svg>
                 </button>
             `;
-            
             return div;
         }
 
@@ -912,19 +849,15 @@
             }
         };
 
-        // Custom alert function since alert() doesn't work in iframe
         function showCustomAlert(message) {
             const alertDiv = document.createElement('div');
             alertDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
             alertDiv.textContent = message;
             document.body.appendChild(alertDiv);
-            
             setTimeout(() => {
                 alertDiv.remove();
             }, 3000);
         }
-
-
     </script>
 </body>
 </html>
