@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Time Fun Chat</title>
+    <title>Real Time Chat</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <!-- Firebase Compat SDK for better browser compatibility -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -35,7 +35,7 @@
         <div id="loading" class="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50">
             <div class="text-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p class="text-gray-600 dark:text-gray-400">Loading Fun Chat App...</p>
+                <p class="text-gray-600 dark:text-gray-400">Loading Chat App...</p>
             </div>
         </div>
 
@@ -649,21 +649,42 @@
                 database.ref('rooms').off('value', roomsListener);
             }
             
+            console.log('Loading rooms for user:', currentUser.uid);
+            
             roomsListener = database.ref('rooms').on('value', (snapshot) => {
+                console.log('Rooms data received:', snapshot.exists());
                 const roomsList = document.getElementById('rooms-list');
                 roomsList.innerHTML = '';
                 
                 if (snapshot.exists()) {
                     const rooms = snapshot.val();
+                    console.log('Total rooms in database:', Object.keys(rooms).length);
+                    
+                    let userRoomsCount = 0;
                     Object.entries(rooms).forEach(([roomId, roomData]) => {
+                        console.log(`Checking room ${roomId}:`, roomData);
+                        console.log(`Room users:`, roomData.users);
+                        console.log(`User ${currentUser.uid} in room:`, roomData.users && roomData.users[currentUser.uid]);
+                        
                         if (roomData.users && roomData.users[currentUser.uid]) {
+                            userRoomsCount++;
                             const roomElement = createRoomElement(roomId, roomData);
                             roomsList.appendChild(roomElement);
                         }
                     });
+                    
+                    console.log('User is in', userRoomsCount, 'rooms');
+                    
+                    if (userRoomsCount === 0) {
+                        roomsList.innerHTML = '<p class="text-gray-500 text-center py-4">No rooms yet. Create your first room!</p>';
+                    }
                 } else {
+                    console.log('No rooms exist in database');
                     roomsList.innerHTML = '<p class="text-gray-500 text-center py-4">No rooms yet. Create your first room!</p>';
                 }
+            }, (error) => {
+                console.error('Error loading rooms:', error);
+                showCustomAlert('Error loading rooms: ' + error.message);
             });
         }
 
