@@ -1,8 +1,14 @@
-<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real Time Chat</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <!-- Firebase Compat SDK for better browser compatibility -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -27,7 +33,10 @@
     <div id="app" class="min-h-screen">
         <!-- Loading Screen -->
         <div id="loading" class="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p class="text-gray-600 dark:text-gray-400">Loading Chat App...</p>
+            </div>
         </div>
 
         <!-- Login/Signup Screen -->
@@ -261,15 +270,20 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import Firebase modules using static imports (better Android Chrome compatibility)
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, deleteUser } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-        import { getDatabase, ref, set, get, push, onValue, off, remove, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js';
-        
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
         console.log('Starting Firebase app initialization...');
-        console.log('Firebase modules loaded successfully');
 
         // Firebase configuration
         const firebaseConfig = {
@@ -283,32 +297,49 @@
             measurementId: "G-EFF5SJNKPV"
         };
 
-        // Initialize Firebase
+        // Wait for Firebase SDK to load and then initialize
         let app, auth, database;
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            database = getDatabase(app);
-            console.log('Firebase initialized successfully');
-        } catch (error) {
-            console.error('Failed to initialize Firebase:', error);
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('auth-error').textContent = 'Failed to initialize Firebase. Please refresh the page.';
-            document.getElementById('auth-error').classList.remove('hidden');
-        }
-
-        // Dark mode detection
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
+        
+        function waitForFirebase(callback) {
+            if (typeof firebase !== 'undefined') {
+                console.log('Firebase SDK loaded successfully');
+                callback();
             } else {
-                document.documentElement.classList.remove('dark');
+                console.log('Waiting for Firebase SDK to load...');
+                setTimeout(() => waitForFirebase(callback), 100);
             }
-        });
+        }
+        
+        function initializeFirebase() {
+            try {
+                console.log('Initializing Firebase...');
+                app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                database = firebase.database();
+                console.log('Firebase initialized successfully');
+                
+                // Now that Firebase is ready, initialize the app
+                init();
+            } catch (error) {
+                console.error('Failed to initialize Firebase:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('auth-error').textContent = 'Failed to initialize Firebase: ' + error.message;
+                document.getElementById('auth-error').classList.remove('hidden');
+            }
+        }
+        
+        // Wait for both DOM and Firebase to be ready
+        function startApp() {
+            waitForFirebase(initializeFirebase);
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
 
         // Global variables
         let currentUser = null;
@@ -341,7 +372,7 @@
             }, 10000); // 10 second timeout
             
             try {
-                onAuthStateChanged(auth, (user) => {
+                auth.onAuthStateChanged((user) => {
                     console.log('Auth state changed:', user ? 'User logged in' : 'No user');
                     clearTimeout(loadingTimeout);
                     
@@ -443,6 +474,10 @@
             const isSignup = authSubmit.textContent === 'Sign Up';
             
             try {
+                hideError();
+                authSubmit.disabled = true;
+                authSubmit.textContent = 'Processing...';
+                
                 if (isSignup) {
                     const username = document.getElementById('signup-username').value;
                     if (!username.trim()) {
@@ -450,28 +485,31 @@
                         return;
                     }
                     
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await set(ref(database, `users/${userCredential.user.uid}`), {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await database.ref(`users/${userCredential.user.uid}`).set({
                         username: username.trim(),
                         email: email,
                         profilePic: '',
                         createdAt: Date.now()
                     });
                 } else {
-                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
                     
                     // Check if user exists in database
-                    const userSnapshot = await get(ref(database, `users/${userCredential.user.uid}`));
+                    const userSnapshot = await database.ref(`users/${userCredential.user.uid}`).once('value');
                     if (!userSnapshot.exists()) {
                         // User authenticated but no database record - sign them out and show error
-                        await signOut(auth);
+                        await auth.signOut();
                         showError('Account not found in database. Please contact support or create a new account.');
                         return;
                     }
                 }
-                hideError();
             } catch (error) {
+                console.error('Auth error:', error);
                 showError(error.message);
+            } finally {
+                authSubmit.disabled = false;
+                authSubmit.textContent = isSignup ? 'Sign Up' : 'Login';
             }
         }
 
@@ -504,7 +542,7 @@
 
         async function loadUserProfile() {
             try {
-                const snapshot = await get(ref(database, `users/${currentUser.uid}`));
+                const snapshot = await database.ref(`users/${currentUser.uid}`).once('value');
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     document.getElementById('profile-username').value = userData.username || '';
@@ -520,12 +558,12 @@
             const profilePic = document.getElementById('profile-pic').value.trim();
             
             if (!username) {
-                alert('Username is required');
+                showCustomAlert('Username is required');
                 return;
             }
 
             try {
-                await set(ref(database, `users/${currentUser.uid}`), {
+                await database.ref(`users/${currentUser.uid}`).set({
                     username,
                     email: currentUser.email,
                     profilePic,
@@ -533,16 +571,16 @@
                 });
                 hideModal('profile-modal');
             } catch (error) {
-                alert('Error saving profile: ' + error.message);
+                showCustomAlert('Error saving profile: ' + error.message);
             }
         }
 
         async function logout() {
             try {
-                await signOut(auth);
+                await auth.signOut();
                 hideModal('settings-modal');
             } catch (error) {
-                alert('Error logging out: ' + error.message);
+                showCustomAlert('Error logging out: ' + error.message);
             }
         }
 
@@ -565,27 +603,27 @@
         async function deleteAccount() {
             try {
                 // Delete user data from database
-                await remove(ref(database, `users/${currentUser.uid}`));
+                await database.ref(`users/${currentUser.uid}`).remove();
                 
                 // Delete user account
-                await deleteUser(currentUser);
+                await currentUser.delete();
                 
                 hideModal('confirm-modal');
             } catch (error) {
-                alert('Error deleting account: ' + error.message);
+                showCustomAlert('Error deleting account: ' + error.message);
             }
         }
 
         async function createRoom() {
             const roomName = document.getElementById('room-name-input').value.trim();
             if (!roomName) {
-                alert('Room name is required');
+                showCustomAlert('Room name is required');
                 return;
             }
 
             try {
-                const roomRef = push(ref(database, 'rooms'));
-                await set(roomRef, {
+                const roomRef = database.ref('rooms').push();
+                await roomRef.set({
                     name: roomName,
                     createdAt: Date.now(),
                     createdBy: currentUser.uid,
@@ -602,16 +640,16 @@
                 hideModal('create-room-modal');
                 loadRooms();
             } catch (error) {
-                alert('Error creating room: ' + error.message);
+                showCustomAlert('Error creating room: ' + error.message);
             }
         }
 
         function loadRooms() {
             if (roomsListener) {
-                off(ref(database, 'rooms'), roomsListener);
+                database.ref('rooms').off('value', roomsListener);
             }
             
-            roomsListener = onValue(ref(database, 'rooms'), (snapshot) => {
+            roomsListener = database.ref('rooms').on('value', (snapshot) => {
                 const roomsList = document.getElementById('rooms-list');
                 roomsList.innerHTML = '';
                 
@@ -623,6 +661,8 @@
                             roomsList.appendChild(roomElement);
                         }
                     });
+                } else {
+                    roomsList.innerHTML = '<p class="text-gray-500 text-center py-4">No rooms yet. Create your first room!</p>';
                 }
             });
         }
@@ -660,7 +700,7 @@
             document.getElementById('rooms-view').classList.remove('hidden');
             document.getElementById('chat-view').classList.add('hidden');
             if (messagesListener) {
-                off(ref(database, `rooms/${currentRoom}/messages`), messagesListener);
+                database.ref(`rooms/${currentRoom}/messages`).off('value', messagesListener);
                 messagesListener = null;
             }
             currentRoom = null;
@@ -673,10 +713,10 @@
 
         function loadMessages() {
             if (messagesListener) {
-                off(ref(database, `rooms/${currentRoom}/messages`), messagesListener);
+                database.ref(`rooms/${currentRoom}/messages`).off('value', messagesListener);
             }
             
-            messagesListener = onValue(ref(database, `rooms/${currentRoom}/messages`), (snapshot) => {
+            messagesListener = database.ref(`rooms/${currentRoom}/messages`).on('value', (snapshot) => {
                 const messagesContainer = document.getElementById('messages-container');
                 messagesContainer.innerHTML = '';
                 
@@ -684,12 +724,15 @@
                     const messages = snapshot.val();
                     const sortedMessages = Object.entries(messages).sort((a, b) => a[1].timestamp - b[1].timestamp);
                     
-                    sortedMessages.forEach(([messageId, messageData]) => {
-                        const messageElement = createMessageElement(messageData);
-                        messagesContainer.appendChild(messageElement);
-                    });
-                    
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    Promise.all(sortedMessages.map(([messageId, messageData]) => createMessageElement(messageData)))
+                        .then(messageElements => {
+                            messageElements.forEach(element => {
+                                messagesContainer.appendChild(element);
+                            });
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        });
+                } else {
+                    messagesContainer.innerHTML = '<p class="text-gray-500 text-center py-4">No messages yet. Start the conversation!</p>';
                 }
             });
         }
@@ -702,7 +745,7 @@
             
             let senderName = 'Unknown';
             try {
-                const senderSnapshot = await get(ref(database, `users/${messageData.senderId}`));
+                const senderSnapshot = await database.ref(`users/${messageData.senderId}`).once('value');
                 if (senderSnapshot.exists()) {
                     senderName = senderSnapshot.val().username;
                 }
@@ -734,8 +777,8 @@
             if (!text || !currentRoom) return;
             
             try {
-                const messageRef = push(ref(database, `rooms/${currentRoom}/messages`));
-                await set(messageRef, {
+                const messageRef = database.ref(`rooms/${currentRoom}/messages`).push();
+                await messageRef.set({
                     senderId: currentUser.uid,
                     text,
                     timestamp: Date.now()
@@ -743,7 +786,7 @@
                 
                 messageInput.value = '';
             } catch (error) {
-                alert('Error sending message: ' + error.message);
+                showCustomAlert('Error sending message: ' + error.message);
             }
         }
 
@@ -753,7 +796,7 @@
             
             try {
                 // Find user by email
-                const usersSnapshot = await get(ref(database, 'users'));
+                const usersSnapshot = await database.ref('users').once('value');
                 let friendId = null;
                 
                 if (usersSnapshot.exists()) {
@@ -767,37 +810,43 @@
                 }
                 
                 if (!friendId) {
-                    alert('User not found');
+                    showCustomAlert('User not found');
                     return;
                 }
                 
                 // Add friend
-                await set(ref(database, `users/${currentUser.uid}/friends/${friendId}`), true);
+                await database.ref(`users/${currentUser.uid}/friends/${friendId}`).set(true);
                 
                 document.getElementById('friend-email').value = '';
                 loadFriends();
             } catch (error) {
-                alert('Error adding friend: ' + error.message);
+                showCustomAlert('Error adding friend: ' + error.message);
             }
         }
 
         async function loadFriends() {
             try {
-                const friendsSnapshot = await get(ref(database, `users/${currentUser.uid}/friends`));
+                const friendsSnapshot = await database.ref(`users/${currentUser.uid}/friends`).once('value');
                 const friendsList = document.getElementById('friends-list');
                 friendsList.innerHTML = '';
                 
                 if (friendsSnapshot.exists()) {
                     const friends = friendsSnapshot.val();
                     
-                    for (const friendId of Object.keys(friends)) {
-                        const friendSnapshot = await get(ref(database, `users/${friendId}`));
-                        if (friendSnapshot.exists()) {
-                            const friendData = friendSnapshot.val();
-                            const friendElement = createFriendElement(friendId, friendData);
-                            friendsList.appendChild(friendElement);
-                        }
-                    }
+                    const friendElements = await Promise.all(
+                        Object.keys(friends).map(async (friendId) => {
+                            const friendSnapshot = await database.ref(`users/${friendId}`).once('value');
+                            if (friendSnapshot.exists()) {
+                                const friendData = friendSnapshot.val();
+                                return createFriendElement(friendId, friendData);
+                            }
+                            return null;
+                        })
+                    );
+                    
+                    friendElements.filter(el => el !== null).forEach(element => {
+                        friendsList.appendChild(element);
+                    });
                 } else {
                     friendsList.innerHTML = '<p class="text-gray-500 text-center py-4">No friends yet</p>';
                 }
@@ -835,25 +884,26 @@
 
         window.removeFriend = async function(friendId) {
             try {
-                await remove(ref(database, `users/${currentUser.uid}/friends/${friendId}`));
+                await database.ref(`users/${currentUser.uid}/friends/${friendId}`).remove();
                 loadFriends();
             } catch (error) {
-                alert('Error removing friend: ' + error.message);
+                showCustomAlert('Error removing friend: ' + error.message);
             }
         };
 
-        // Initialize the app
-        init();
-    </script>
-    
-    <!-- Fallback for browsers without ES module support -->
-    <script nomodule="">
-        console.log('ES modules not supported, showing fallback');
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('auth-error').textContent = 'Your browser does not support this app. Please update your browser.';
-        document.getElementById('auth-error').classList.remove('hidden');
-    </script>
+        // Custom alert function since alert() doesn't work in iframe
+        function showCustomAlert(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
 
 
-</body></html>
+    </script>
+</body>
+</html>
