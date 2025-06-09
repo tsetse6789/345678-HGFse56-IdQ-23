@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Picker Tool</title>
+    <script src="../Hidden/Script/cdn.tailwindcss.com.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+        }
+        .crosshair {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+        }
+        .magnifier {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border: 3px solid white;
+            border-radius: 50%;
+            pointer-events: none;
+            background: white;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.3);
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .magnifier-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .pixel-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        .center-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: red;
+            border: 1px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 11;
+        }
+        .color-info-item {
+            transition: background-color 0.2s ease;
+        }
+        .color-info-item:hover {
+            background-color: rgba(93, 92, 222, 0.1);
+        }
+        .dark .color-info-item:hover {
+            background-color: rgba(93, 92, 222, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2">Color Picker Tool</h1>
+            <p class="text-gray-600 dark:text-gray-400">Pick colors from a panel or upload an image to extract colors</p>
+        </div>
+
+        <!-- Color Picker Panel -->
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Color Panel</h2>
+            <div class="flex flex-col sm:flex-row items-start gap-6">
+                <div class="flex flex-col items-center">
+                    <label for="colorPicker" class="block text-sm font-medium mb-2">Pick a Color</label>
+                    <input type="color" id="colorPicker" class="w-20 h-20 rounded-lg border-2 border-gray-300 dark:border-gray-600 cursor-pointer">
+                </div>
+                <div class="flex-1">
+                    <div id="colorPreview" class="w-full h-20 rounded-lg border-2 border-gray-300 dark:border-gray-600 mb-4" style="background-color: #5D5CDE;"></div>
+                    <div id="colorInfo" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <!-- Color info will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Upload Section -->
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Pick from Image</h2>
+            <div class="mb-4">
+                <label for="imageUpload" class="block text-sm font-medium mb-2">Upload an Image</label>
+                <input type="file" id="imageUpload" accept="image/*" class="block w-full text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+            </div>
+            <div id="imageContainer" class="hidden">
+                <div class="canvas-container mb-4">
+                    <canvas id="imageCanvas" class="max-w-full h-auto border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-crosshair"></canvas>
+                    <div id="crosshair" class="crosshair hidden"></div>
+                    <div id="magnifier" class="magnifier hidden">
+                        <canvas id="magnifierCanvas" class="magnifier-canvas"></canvas>
+                        <div class="center-dot"></div>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Click on the image to pick a color</p>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+            <span id="toastMessage">Color copied to clipboard!</span>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        const colorPicker = document.getElementById('colorPicker');
+        const colorPreview = document.getElementById('colorPreview');
+        const colorInfo = document.getElementById('colorInfo');
+        const imageUpload = document.getElementById('imageUpload');
+        const imageContainer = document.getElementById('imageContainer');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const crosshair = document.getElementById('crosshair');
+        const magnifier = document.getElementById('magnifier');
+        const magnifierCanvas = document.getElementById('magnifierCanvas');
+        const ctx = imageCanvas.getContext('2d');
+        const magnifierCtx = magnifierCanvas.getContext('2d');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+
+        let currentImage = null;
+
+        // Initialize with default color
+        updateColorInfo('#5D5CDE');
+
+        // Color picker event
+        colorPicker.addEventListener('input', (e) => {
+            const color = e.target.value;
+            updateColorInfo(color);
+        });
+
+        // Image upload event
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        currentImage = img;
+                        displayImage(img);
+                        imageContainer.classList.remove('hidden');
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Canvas click event for color picking
+        imageCanvas.addEventListener('click', (e) => {
+            if (!currentImage) return;
+            
+            const rect = imageCanvas.getBoundingClientRect();
+            const scaleX = imageCanvas.width / rect.width;
+            const scaleY = imageCanvas.height / rect.height;
+            
+            const x = Math.floor((e.clientX - rect.left) * scaleX);
+            const y = Math.floor((e.clientY - rect.top) * scaleY);
+            
+            const imageData = ctx.getImageData(x, y, 1, 1);
+            const [r, g, b] = imageData.data;
+            
+            const hex = rgbToHex(r, g, b);
+            updateColorInfo(hex);
+            colorPicker.value = hex;
+        });
+
+        // Canvas mousemove event for crosshair and magnifier
+        imageCanvas.addEventListener('mousemove', (e) => {
+            if (!currentImage) return;
+            
+            const rect = imageCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Update crosshair position
+            crosshair.style.left = mouseX + 'px';
+            crosshair.style.top = mouseY + 'px';
+            crosshair.classList.remove('hidden');
+            
+            // Update magnifier
+            updateMagnifier(e, rect);
+            
+            // Position magnifier to avoid cursor
+            const magnifierOffset = 80;
+            let magX = mouseX + magnifierOffset;
+            let magY = mouseY - magnifierOffset;
+            
+            // Keep magnifier within canvas bounds
+            if (magX + 75 > rect.width) magX = mouseX - magnifierOffset - 75;
+            if (magY - 75 < 0) magY = mouseY + magnifierOffset;
+            
+            magnifier.style.left = magX + 'px';
+            magnifier.style.top = magY + 'px';
+            magnifier.classList.remove('hidden');
+        });
+
+        imageCanvas.addEventListener('mouseleave', () => {
+            crosshair.classList.add('hidden');
+            magnifier.classList.add('hidden');
+        });
+
+        function displayImage(img) {
+            const maxWidth = 600;
+            const maxHeight = 400;
+            
+            let { width, height } = img;
+            
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            
+            if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+            }
+            
+            imageCanvas.width = width;
+            imageCanvas.height = height;
+            
+            // Setup magnifier canvas
+            magnifierCanvas.width = 150;
+            magnifierCanvas.height = 150;
+            
+            ctx.drawImage(img, 0, 0, width, height);
+        }
+
+        function updateMagnifier(e, rect) {
+            if (!currentImage) return;
+            
+            const scaleX = imageCanvas.width / rect.width;
+            const scaleY = imageCanvas.height / rect.height;
+            
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            // Clear magnifier canvas
+            magnifierCtx.clearRect(0, 0, magnifierCanvas.width, magnifierCanvas.height);
+            
+            // Set up magnifier properties
+            const magnification = 10;
+            const sourceSize = 15; // Size of the area to magnify (in original image pixels)
+            
+            // Calculate source area
+            const sourceX = Math.max(0, x - sourceSize / 2);
+            const sourceY = Math.max(0, y - sourceSize / 2);
+            const sourceWidth = Math.min(sourceSize, imageCanvas.width - sourceX);
+            const sourceHeight = Math.min(sourceSize, imageCanvas.height - sourceY);
+            
+            // Create clipping path for circular magnifier
+            magnifierCtx.save();
+            magnifierCtx.beginPath();
+            magnifierCtx.arc(75, 75, 72, 0, 2 * Math.PI);
+            magnifierCtx.clip();
+            
+            // Disable image smoothing for pixelated effect
+            magnifierCtx.imageSmoothingEnabled = false;
+            
+            // Draw magnified portion
+            const imageData = ctx.getImageData(sourceX, sourceY, sourceWidth, sourceHeight);
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = sourceWidth;
+            tempCanvas.height = sourceHeight;
+            tempCtx.putImageData(imageData, 0, 0);
+            
+            // Draw the magnified image
+            const destSize = sourceSize * magnification;
+            const destX = (150 - destSize) / 2;
+            const destY = (150 - destSize) / 2;
+            
+            magnifierCtx.drawImage(tempCanvas, destX, destY, destSize, destSize);
+            
+            // Draw pixel grid
+            magnifierCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            magnifierCtx.lineWidth = 0.5;
+            
+            const pixelSize = magnification;
+            for (let i = 0; i <= sourceSize; i++) {
+                const linePos = destX + i * pixelSize;
+                magnifierCtx.beginPath();
+                magnifierCtx.moveTo(linePos, destY);
+                magnifierCtx.lineTo(linePos, destY + destSize);
+                magnifierCtx.stroke();
+                
+                magnifierCtx.beginPath();
+                magnifierCtx.moveTo(destX, destY + i * pixelSize);
+                magnifierCtx.lineTo(destX + destSize, destY + i * pixelSize);
+                magnifierCtx.stroke();
+            }
+            
+            magnifierCtx.restore();
+        }
+
+        function updateColorInfo(hex) {
+            colorPreview.style.backgroundColor = hex;
+            
+            const rgb = hexToRgb(hex);
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+            
+            colorInfo.innerHTML = `
+                <div class="color-info-item p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer" onclick="copyToClipboard('${hex}', 'HEX')">
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">HEX</div>
+                    <div class="font-mono text-sm">${hex.toUpperCase()}</div>
+                </div>
+                <div class="color-info-item p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer" onclick="copyToClipboard('rgb(${rgb.r}, ${rgb.g}, ${rgb.b})', 'RGB')">
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">RGB</div>
+                    <div class="font-mono text-sm">rgb(${rgb.r}, ${rgb.g}, ${rgb.b})</div>
+                </div>
+                <div class="color-info-item p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer" onclick="copyToClipboard('hsl(${Math.round(hsl.h)}, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)', 'HSL')">
+                    <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">HSL</div>
+                    <div class="font-mono text-sm">hsl(${Math.round(hsl.h)}, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)</div>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(text, format) {
+            navigator.clipboard.writeText(text).then(() => {
+                toastMessage.textContent = `${format} color copied to clipboard!`;
+                showToast();
+            }).catch(() => {
+                toastMessage.textContent = 'Failed to copy color';
+                showToast();
+            });
+        }
+
+        function showToast() {
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 2000);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join("");
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+
+            return {
+                h: h * 360,
+                s: s * 100,
+                l: l * 100
+            };
+        }
+    </script>
+</body>
+</html>
