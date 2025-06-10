@@ -1,33 +1,126 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=https://tsetse6789.github.io/chat">
-    <title>Redirecting...</title>
+    <title>Not Supported Type</title>
+    <script src="../Hidden/Script/cdn.tailwindcss.com.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-            background-color: #f4f4f9;
-        }
-        .message {
-            margin-top: 20%;
-            font-size: 1.5rem;
-            color: #333;
-        }
-        a {
-            color: #007BFF;
-            text-decoration: none;
-            font-weight: bold;
+            font-family: 'Inter', sans-serif;
         }
     </style>
 </head>
-<body>
-    <div class="message">
-        <p>你正在被重定向到 <a href="https://tsetse6789.github.io/chat" target="_blank">Fun Chat</a>...</p>
-        <p>如果未自動跳轉，請點擊上方連結。</p>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full text-center space-y-6">
+        <!-- Icon -->
+        <div class="mx-auto w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
+        </div>
+
+        <!-- Heading -->
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+            Please Open in Your Browser
+        </h1>
+
+        <!-- URL Display -->
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Fun Chat App by Nut</p>
+            <p class="text-sm font-mono break-all text-gray-800 dark:text-gray-200" id="urlText">
+                https://tsetse6789.github.io/chat
+            </p>
+        </div>
+
+        <!-- Copy Button -->
+        <button 
+            onclick="copyLink()" 
+            class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            id="copyButton"
+        >
+            Copy Link
+        </button>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="hidden text-sm text-green-600 dark:text-green-400 font-medium">
+            ✓ Link copied to clipboard!
+        </div>
     </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Copy link functionality
+        async function copyLink() {
+            const url = 'https://tsetse6789.github.io/chat';
+            const button = document.getElementById('copyButton');
+            const successMessage = document.getElementById('successMessage');
+            
+            try {
+                await navigator.clipboard.writeText(url);
+                
+                // Show success feedback
+                button.textContent = 'Copied!';
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+                button.classList.remove('bg-primary', 'hover:bg-primary/90');
+                successMessage.classList.remove('hidden');
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    button.textContent = 'Copy Link';
+                    button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    button.classList.add('bg-primary', 'hover:bg-primary/90');
+                    successMessage.classList.add('hidden');
+                }, 2000);
+                
+            } catch (err) {
+                console.error('Failed to copy link:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    button.textContent = 'Copied!';
+                    successMessage.classList.remove('hidden');
+                    setTimeout(() => {
+                        button.textContent = 'Copy Link';
+                        successMessage.classList.add('hidden');
+                    }, 2000);
+                } catch (fallbackErr) {
+                    console.error('Fallback copy failed:', fallbackErr);
+                    button.textContent = 'Copy Failed';
+                    setTimeout(() => {
+                        button.textContent = 'Copy Link';
+                    }, 2000);
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+    </script>
 </body>
 </html>
