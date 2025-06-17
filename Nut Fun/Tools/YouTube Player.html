@@ -54,6 +54,15 @@
             Copy Link
         </button>
 
+        <!-- Android Web Menu Button (only shown on Android devices) -->
+        <button 
+            onclick="openInWebMenu()" 
+            class="hidden w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            id="webMenuButton"
+        >
+            Or Open in Web Menu
+        </button>
+
         <!-- Success Message -->
         <div id="successMessage" class="hidden text-sm text-green-600 dark:text-green-400 font-medium">
             ✓ Link copied to clipboard!
@@ -72,6 +81,28 @@
                 document.documentElement.classList.remove('dark');
             }
         });
+
+        // Android detection and Web Menu button visibility
+        function isAndroid() {
+            return /Android/i.test(navigator.userAgent);
+        }
+
+        // Show Web Menu button on Android devices
+        if (isAndroid()) {
+            document.getElementById('webMenuButton').classList.remove('hidden');
+        }
+
+        // Open in Web Menu functionality for Android
+        function openInWebMenu() {
+            const webMenuUrl = 'intent://tsetse6789.github.io/player#Intent;scheme=https;package=org.chromium.webapk.a6428527539a3ccaf_v2;end';
+            try {
+                window.location.href = webMenuUrl;
+            } catch (err) {
+                console.error('Failed to open in Web Menu:', err);
+                // Fallback to regular URL
+                window.open('https://tsetse6789.github.io/player', '_blank');
+            }
+        }
 
         // Copy link functionality
         async function copyLink() {
