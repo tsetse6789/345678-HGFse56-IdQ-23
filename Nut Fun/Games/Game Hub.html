@@ -1,0 +1,769 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Switch - Mini Game Collection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'nintendo-red': '#E60012',
+                        'nintendo-blue': '#0066CC',
+                        'switch-gray': '#32334A',
+                        'joy-orange': '#FF6B35',
+                        'joy-purple': '#B537F2'
+                    },
+                    fontFamily: {
+                        'game': ['Comic Sans MS', 'cursive', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .game-button {
+            transition: all 0.2s ease;
+            transform-style: preserve-3d;
+        }
+        .game-button:active {
+            transform: translateY(2px) scale(0.98);
+        }
+        .bouncy {
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .rainbow-text {
+            background: linear-gradient(45deg, #ff6b35, #f7931e, #ffd700, #90ee90, #87ceeb, #da70d6);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 3s ease-in-out infinite;
+        }
+        @keyframes rainbow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 font-game">
+    <!-- Dark mode support -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <!-- Main Game Container -->
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white/90 dark:bg-gray-800/90 backdrop-blur shadow-lg p-4">
+            <div class="max-w-6xl mx-auto flex items-center justify-between">
+                <h1 class="text-3xl md:text-4xl font-bold rainbow-text">🎮 Party Switch</h1>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm md:text-base font-semibold bg-nintendo-red text-white px-3 py-1 rounded-full">
+                        Score: <span id="totalScore">0</span>
+                    </div>
+                    <button id="homeBtn" class="bg-switch-gray hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        🏠 Home
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4">
+            <!-- Home Screen -->
+            <div id="homeScreen" class="max-w-4xl mx-auto">
+                <div class="text-center mb-8">
+                    <h2 class="text-4xl md:text-6xl font-bold text-white mb-4 float">Welcome to Party Switch!</h2>
+                    <p class="text-xl text-white/90 mb-6">Choose your mini-game adventure!</p>
+                </div>
+
+                <!-- Game Selection Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Reaction Game -->
+                    <div class="game-button bg-gradient-to-br from-red-400 to-red-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('reaction')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">⚡</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Lightning Reflexes</h3>
+                            <p class="text-white/80">Test your reaction time!</p>
+                        </div>
+                    </div>
+
+                    <!-- Memory Game -->
+                    <div class="game-button bg-gradient-to-br from-blue-400 to-blue-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('memory')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🧠</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Memory Master</h3>
+                            <p class="text-white/80">Remember the sequence!</p>
+                        </div>
+                    </div>
+
+                    <!-- Tap Challenge -->
+                    <div class="game-button bg-gradient-to-br from-green-400 to-green-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('tap')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">👆</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Tap Frenzy</h3>
+                            <p class="text-white/80">Tap as fast as you can!</p>
+                        </div>
+                    </div>
+
+                    <!-- Color Match -->
+                    <div class="game-button bg-gradient-to-br from-yellow-400 to-orange-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('color')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🌈</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Color Rush</h3>
+                            <p class="text-white/80">Match the colors quickly!</p>
+                        </div>
+                    </div>
+
+                    <!-- Pattern Game -->
+                    <div class="game-button bg-gradient-to-br from-purple-400 to-purple-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('pattern')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🔄</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Pattern Panic</h3>
+                            <p class="text-white/80">Follow the pattern!</p>
+                        </div>
+                    </div>
+
+                    <!-- Balance Game -->
+                    <div class="game-button bg-gradient-to-br from-pink-400 to-pink-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('balance')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">⚖️</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Perfect Balance</h3>
+                            <p class="text-white/80">Keep it steady!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Screen -->
+            <div id="gameScreen" class="hidden max-w-4xl mx-auto">
+                <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur rounded-2xl shadow-2xl p-6 md:p-8">
+                    <div class="text-center mb-6">
+                        <h2 id="gameTitle" class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2"></h2>
+                        <p id="gameInstructions" class="text-lg text-gray-600 dark:text-gray-300 mb-4"></p>
+                        <div class="flex justify-center gap-6 text-lg font-semibold">
+                            <div class="bg-blue-500 text-white px-4 py-2 rounded-lg">
+                                Score: <span id="gameScore">0</span>
+                            </div>
+                            <div class="bg-green-500 text-white px-4 py-2 rounded-lg">
+                                Time: <span id="gameTime">30</span>s
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game Content Area -->
+                    <div id="gameContent" class="min-h-96 flex items-center justify-center">
+                        <!-- Dynamic game content will be inserted here -->
+                    </div>
+
+                    <!-- Game Controls -->
+                    <div id="gameControls" class="mt-6 text-center">
+                        <button id="startGameBtn" class="bg-green-500 hover:bg-green-600 text-white text-xl font-bold py-4 px-8 rounded-2xl transition-colors">
+                            Start Game!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-black/20 backdrop-blur text-white text-center p-4">
+            <p class="text-sm">🎮 Party Switch - Nintendo-style fun for everyone! 🎮</p>
+        </footer>
+    </div>
+
+    <script>
+        // Game State
+        let currentGame = null;
+        let gameScore = 0;
+        let totalScore = parseInt(localStorage.getItem('partyScore') || '0');
+        let gameTimer = null;
+        let gameTime = 30;
+
+        // Update total score display
+        document.getElementById('totalScore').textContent = totalScore;
+
+        // Navigation
+        document.getElementById('homeBtn').addEventListener('click', showHome);
+
+        function showHome() {
+            document.getElementById('homeScreen').classList.remove('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+            if (gameTimer) {
+                clearInterval(gameTimer);
+                gameTimer = null;
+            }
+        }
+
+        function startGame(gameType) {
+            currentGame = gameType;
+            gameScore = 0;
+            gameTime = 30;
+            
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            // Setup game based on type
+            setupGame(gameType);
+        }
+
+        function setupGame(gameType) {
+            const gameContent = document.getElementById('gameContent');
+            const gameTitle = document.getElementById('gameTitle');
+            const gameInstructions = document.getElementById('gameInstructions');
+            const startBtn = document.getElementById('startGameBtn');
+            
+            // Reset and show the start button
+            startBtn.style.display = 'inline-block';
+            startBtn.textContent = 'Start Game!';
+            
+            gameContent.innerHTML = '';
+            
+            switch(gameType) {
+                case 'reaction':
+                    gameTitle.textContent = '⚡ Lightning Reflexes';
+                    gameInstructions.textContent = 'Click/tap when the screen turns green!';
+                    setupReactionGame();
+                    break;
+                case 'memory':
+                    gameTitle.textContent = '🧠 Memory Master';
+                    gameInstructions.textContent = 'Remember and repeat the sequence!';
+                    setupMemoryGame();
+                    break;
+                case 'tap':
+                    gameTitle.textContent = '👆 Tap Frenzy';
+                    gameInstructions.textContent = 'Tap the button as many times as possible!';
+                    setupTapGame();
+                    break;
+                case 'color':
+                    gameTitle.textContent = '🌈 Color Rush';
+                    gameInstructions.textContent = 'Click the color that matches the text!';
+                    setupColorGame();
+                    break;
+                case 'pattern':
+                    gameTitle.textContent = '🔄 Pattern Panic';
+                    gameInstructions.textContent = 'Repeat the button sequence!';
+                    setupPatternGame();
+                    break;
+                case 'balance':
+                    gameTitle.textContent = '⚖️ Perfect Balance';
+                    gameInstructions.textContent = 'Keep the bar in the center!';
+                    setupBalanceGame();
+                    break;
+            }
+            
+            startBtn.onclick = () => startGameTimer();
+        }
+
+        function startGameTimer() {
+            document.getElementById('startGameBtn').style.display = 'none';
+            updateScore();
+            updateTimer();
+            
+            gameTimer = setInterval(() => {
+                gameTime--;
+                updateTimer();
+                
+                if (gameTime <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            // Start the specific game logic
+            startGameLogic();
+        }
+
+        function updateScore() {
+            document.getElementById('gameScore').textContent = gameScore;
+        }
+
+        function updateTimer() {
+            document.getElementById('gameTime').textContent = gameTime;
+        }
+
+        function endGame() {
+            clearInterval(gameTimer);
+            gameTimer = null;
+            
+            totalScore += gameScore;
+            localStorage.setItem('partyScore', totalScore.toString());
+            document.getElementById('totalScore').textContent = totalScore;
+            
+            // Show end game message
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="text-center">
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h3 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">Game Over!</h3>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-4">You scored ${gameScore} points!</p>
+                    <button onclick="showHome()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg">
+                        Play Another Game
+                    </button>
+                </div>
+            `;
+        }
+
+        // Game Logic Functions
+        function startGameLogic() {
+            switch(currentGame) {
+                case 'reaction':
+                    startReactionGame();
+                    break;
+                case 'memory':
+                    startMemoryGame();
+                    break;
+                case 'tap':
+                    startTapGame();
+                    break;
+                case 'color':
+                    startColorGame();
+                    break;
+                case 'pattern':
+                    startPatternGame();
+                    break;
+                case 'balance':
+                    startBalanceGame();
+                    break;
+            }
+        }
+
+        // Reaction Game
+        function setupReactionGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div id="reactionArea" class="w-full h-64 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold cursor-pointer">
+                    Wait for green...
+                </div>
+            `;
+        }
+
+        function startReactionGame() {
+            const reactionArea = document.getElementById('reactionArea');
+            let reactionStartTime = 0;
+            let waitingForGreen = false;
+            
+            function newReactionRound() {
+                if (gameTime <= 0) return;
+                
+                reactionArea.className = 'w-full h-64 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold cursor-pointer';
+                reactionArea.textContent = 'Wait for green...';
+                waitingForGreen = true;
+                
+                setTimeout(() => {
+                    if (gameTime <= 0) return;
+                    reactionArea.className = 'w-full h-64 bg-green-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold cursor-pointer';
+                    reactionArea.textContent = 'CLICK NOW!';
+                    reactionStartTime = Date.now();
+                    waitingForGreen = false;
+                }, Math.random() * 3000 + 1000);
+            }
+            
+            reactionArea.onclick = () => {
+                if (waitingForGreen) {
+                    reactionArea.className = 'w-full h-64 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold cursor-pointer';
+                    reactionArea.textContent = 'Too early! Wait...';
+                    return;
+                }
+                
+                if (reactionArea.classList.contains('bg-green-500')) {
+                    const reactionTime = Date.now() - reactionStartTime;
+                    const points = Math.max(1, Math.round(1000 / reactionTime * 10));
+                    gameScore += points;
+                    updateScore();
+                    
+                    reactionArea.className = 'w-full h-64 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold cursor-pointer';
+                    reactionArea.textContent = `+${points} points! (${reactionTime}ms)`;
+                    
+                    setTimeout(newReactionRound, 1000);
+                }
+            };
+            
+            newReactionRound();
+        }
+
+        // Memory Game
+        let memorySequence = [];
+        let playerSequence = [];
+        let memoryRound = 0;
+
+        function setupMemoryGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                    <button id="memBtn1" class="memory-btn h-24 bg-red-500 rounded-lg text-white font-bold text-2xl" data-color="1">1</button>
+                    <button id="memBtn2" class="memory-btn h-24 bg-blue-500 rounded-lg text-white font-bold text-2xl" data-color="2">2</button>
+                    <button id="memBtn3" class="memory-btn h-24 bg-green-500 rounded-lg text-white font-bold text-2xl" data-color="3">3</button>
+                    <button id="memBtn4" class="memory-btn h-24 bg-yellow-500 rounded-lg text-white font-bold text-2xl" data-color="4">4</button>
+                </div>
+                <div id="memoryStatus" class="text-center mt-4 text-xl font-bold">Get ready...</div>
+            `;
+        }
+
+        function startMemoryGame() {
+            memorySequence = [];
+            playerSequence = [];
+            memoryRound = 0;
+            nextMemoryRound();
+        }
+
+        function nextMemoryRound() {
+            if (gameTime <= 0) return;
+            
+            memoryRound++;
+            memorySequence.push(Math.floor(Math.random() * 4) + 1);
+            playerSequence = [];
+            
+            document.getElementById('memoryStatus').textContent = `Round ${memoryRound}: Watch the sequence`;
+            
+            // Disable buttons during sequence
+            const buttons = document.querySelectorAll('.memory-btn');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            // Play sequence
+            playMemorySequence();
+        }
+
+        function playMemorySequence() {
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < memorySequence.length) {
+                    flashMemoryButton(memorySequence[i]);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    document.getElementById('memoryStatus').textContent = 'Your turn! Repeat the sequence';
+                    
+                    // Enable buttons
+                    const buttons = document.querySelectorAll('.memory-btn');
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.onclick = (e) => handleMemoryButtonClick(parseInt(e.target.dataset.color));
+                    });
+                }
+            }, 600);
+        }
+
+        function flashMemoryButton(buttonNum) {
+            const btn = document.getElementById(`memBtn${buttonNum}`);
+            btn.style.opacity = '1';
+            btn.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                btn.style.opacity = '0.7';
+                btn.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        function handleMemoryButtonClick(buttonNum) {
+            playerSequence.push(buttonNum);
+            flashMemoryButton(buttonNum);
+            
+            // Check if correct
+            const currentIndex = playerSequence.length - 1;
+            if (playerSequence[currentIndex] !== memorySequence[currentIndex]) {
+                document.getElementById('memoryStatus').textContent = 'Wrong! Starting over...';
+                setTimeout(() => {
+                    memorySequence = [];
+                    memoryRound = 0;
+                    nextMemoryRound();
+                }, 1500);
+                return;
+            }
+            
+            // Check if sequence complete
+            if (playerSequence.length === memorySequence.length) {
+                gameScore += memoryRound * 10;
+                updateScore();
+                document.getElementById('memoryStatus').textContent = `Correct! +${memoryRound * 10} points`;
+                setTimeout(nextMemoryRound, 1500);
+            }
+        }
+
+        // Tap Game
+        function setupTapGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="text-center">
+                    <button id="tapButton" class="w-48 h-48 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full text-white text-4xl font-bold hover:scale-105 transition-transform">
+                        TAP ME!
+                    </button>
+                    <div id="tapCount" class="mt-4 text-3xl font-bold">Taps: 0</div>
+                </div>
+            `;
+        }
+
+        function startTapGame() {
+            let tapCount = 0;
+            const tapButton = document.getElementById('tapButton');
+            const tapCountDisplay = document.getElementById('tapCount');
+            
+            tapButton.onclick = () => {
+                tapCount++;
+                gameScore = tapCount;
+                updateScore();
+                tapCountDisplay.textContent = `Taps: ${tapCount}`;
+                
+                // Visual feedback
+                tapButton.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    tapButton.style.transform = 'scale(1)';
+                }, 100);
+            };
+        }
+
+        // Color Game
+        const colors = [
+            {name: 'RED', color: 'bg-red-500', textColor: 'text-red-500'},
+            {name: 'BLUE', color: 'bg-blue-500', textColor: 'text-blue-500'},
+            {name: 'GREEN', color: 'bg-green-500', textColor: 'text-green-500'},
+            {name: 'YELLOW', color: 'bg-yellow-500', textColor: 'text-yellow-500'},
+            {name: 'PURPLE', color: 'bg-purple-500', textColor: 'text-purple-500'},
+            {name: 'ORANGE', color: 'bg-orange-500', textColor: 'text-orange-500'}
+        ];
+
+        function setupColorGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="text-center">
+                    <div id="colorText" class="text-6xl font-bold mb-8">RED</div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-lg mx-auto">
+                        ${colors.map((color, index) => 
+                            `<button class="color-btn h-20 ${color.color} rounded-lg text-white font-bold text-lg" data-color="${color.name}">${color.name}</button>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function startColorGame() {
+            let currentColorName = '';
+            let currentColorClass = '';
+            
+            function newColorRound() {
+                if (gameTime <= 0) return;
+                
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                const randomTextColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                currentColorName = randomColor.name;
+                const colorText = document.getElementById('colorText');
+                colorText.textContent = randomTextColor.name;
+                colorText.className = `text-6xl font-bold mb-8 ${randomColor.textColor}`;
+                
+                // Add click handlers to color buttons
+                document.querySelectorAll('.color-btn').forEach(btn => {
+                    btn.onclick = (e) => {
+                        const clickedColor = e.target.dataset.color;
+                        if (clickedColor === currentColorName) {
+                            gameScore += 10;
+                            updateScore();
+                            // Visual feedback
+                            e.target.style.transform = 'scale(0.9)';
+                            setTimeout(() => {
+                                e.target.style.transform = 'scale(1)';
+                                newColorRound();
+                            }, 200);
+                        } else {
+                            e.target.style.backgroundColor = '#ef4444';
+                            setTimeout(() => {
+                                e.target.style.backgroundColor = '';
+                            }, 200);
+                        }
+                    };
+                });
+            }
+            
+            newColorRound();
+        }
+
+        // Pattern Game
+        let patternSequence = [];
+        let patternPlayerIndex = 0;
+
+        function setupPatternGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="text-center">
+                    <div id="patternDisplay" class="mb-8 text-2xl font-bold">Watch the pattern...</div>
+                    <div class="grid grid-cols-4 gap-2 max-w-md mx-auto">
+                        ${Array.from({length: 16}, (_, i) => 
+                            `<button id="patBtn${i}" class="pattern-btn h-16 bg-gray-300 rounded-lg" data-index="${i}"></button>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function startPatternGame() {
+            patternSequence = [];
+            patternPlayerIndex = 0;
+            generatePattern();
+        }
+
+        function generatePattern() {
+            if (gameTime <= 0) return;
+            
+            // Add new button to pattern
+            patternSequence.push(Math.floor(Math.random() * 16));
+            patternPlayerIndex = 0;
+            
+            document.getElementById('patternDisplay').textContent = `Pattern ${patternSequence.length}: Watch carefully`;
+            
+            // Disable all buttons
+            document.querySelectorAll('.pattern-btn').forEach(btn => btn.disabled = true);
+            
+            // Show pattern
+            let i = 0;
+            const showPattern = setInterval(() => {
+                if (i < patternSequence.length) {
+                    const btn = document.getElementById(`patBtn${patternSequence[i]}`);
+                    btn.style.backgroundColor = '#3b82f6';
+                    setTimeout(() => {
+                        btn.style.backgroundColor = '#d1d5db';
+                    }, 300);
+                    i++;
+                } else {
+                    clearInterval(showPattern);
+                    document.getElementById('patternDisplay').textContent = 'Your turn! Click the pattern';
+                    
+                    // Enable buttons
+                    document.querySelectorAll('.pattern-btn').forEach(btn => {
+                        btn.disabled = false;
+                        btn.onclick = (e) => handlePatternClick(parseInt(e.target.dataset.index));
+                    });
+                }
+            }, 500);
+        }
+
+        function handlePatternClick(index) {
+            const btn = document.getElementById(`patBtn${index}`);
+            btn.style.backgroundColor = '#10b981';
+            setTimeout(() => {
+                btn.style.backgroundColor = '#d1d5db';
+            }, 200);
+            
+            if (index === patternSequence[patternPlayerIndex]) {
+                patternPlayerIndex++;
+                if (patternPlayerIndex === patternSequence.length) {
+                    gameScore += patternSequence.length * 5;
+                    updateScore();
+                    document.getElementById('patternDisplay').textContent = `Correct! +${patternSequence.length * 5} points`;
+                    setTimeout(generatePattern, 1500);
+                }
+            } else {
+                document.getElementById('patternDisplay').textContent = 'Wrong! Starting over...';
+                btn.style.backgroundColor = '#ef4444';
+                setTimeout(() => {
+                    btn.style.backgroundColor = '#d1d5db';
+                    patternSequence = [];
+                    generatePattern();
+                }, 1500);
+            }
+        }
+
+        // Balance Game
+        let balancePosition = 50;
+        let balanceDirection = 0;
+
+        function setupBalanceGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="text-center">
+                    <div class="mb-8">
+                        <div class="relative bg-gray-300 h-8 rounded-full mx-auto max-w-md">
+                            <div id="balanceBar" class="absolute top-0 left-1/2 w-4 h-8 bg-blue-500 rounded transform -translate-x-1/2 transition-all duration-100"></div>
+                            <div class="absolute top-10 left-1/2 w-2 h-4 bg-green-500 transform -translate-x-1/2"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 justify-center">
+                        <button id="leftBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-8 rounded-lg text-xl">← LEFT</button>
+                        <button id="rightBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg text-xl">RIGHT →</button>
+                    </div>
+                    <div id="balanceScore" class="mt-4 text-xl font-bold">Stay in the green zone!</div>
+                </div>
+            `;
+        }
+
+        function startBalanceGame() {
+            balancePosition = 50;
+            balanceDirection = (Math.random() - 0.5) * 2;
+            
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const balanceBar = document.getElementById('balanceBar');
+            const balanceScoreDisplay = document.getElementById('balanceScore');
+            
+            leftBtn.onclick = () => {
+                balanceDirection -= 1;
+            };
+            
+            rightBtn.onclick = () => {
+                balanceDirection += 1;
+            };
+            
+            // Game loop
+            const balanceInterval = setInterval(() => {
+                if (gameTime <= 0) {
+                    clearInterval(balanceInterval);
+                    return;
+                }
+                
+                balancePosition += balanceDirection;
+                balanceDirection += (Math.random() - 0.5) * 0.5; // Random drift
+                balanceDirection *= 0.98; // Friction
+                
+                // Boundaries
+                if (balancePosition < 0) {
+                    balancePosition = 0;
+                    balanceDirection = Math.abs(balanceDirection);
+                }
+                if (balancePosition > 100) {
+                    balancePosition = 100;
+                    balanceDirection = -Math.abs(balanceDirection);
+                }
+                
+                // Update visual
+                balanceBar.style.left = `${balancePosition}%`;
+                
+                // Score based on how close to center
+                const distanceFromCenter = Math.abs(balancePosition - 50);
+                if (distanceFromCenter < 10) {
+                    gameScore += 2;
+                    balanceBar.style.backgroundColor = '#10b981';
+                    balanceScoreDisplay.textContent = 'Perfect! +2 points';
+                } else if (distanceFromCenter < 20) {
+                    gameScore += 1;
+                    balanceBar.style.backgroundColor = '#f59e0b';
+                    balanceScoreDisplay.textContent = 'Good! +1 point';
+                } else {
+                    balanceBar.style.backgroundColor = '#ef4444';
+                    balanceScoreDisplay.textContent = 'Get back to center!';
+                }
+                
+                updateScore();
+            }, 100);
+        }
+    </script>
+
+
+</body></html>
