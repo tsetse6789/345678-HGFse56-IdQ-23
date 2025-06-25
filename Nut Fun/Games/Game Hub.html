@@ -1,5 +1,4 @@
-<!DOCTYPE html><html lang="en">
-<head>
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Hub</title>
@@ -56,67 +55,21 @@
             0%, 100% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
         }
-        .pulse-glow {
-            animation: pulseGlow 2s ease-in-out infinite;
-        }
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
-            50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.8); }
-        }
-        .slide-in {
-            animation: slideIn 0.5s ease-out;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .game-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-origin: center;
-        }
-        .game-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 font-game">
     <!-- Dark mode support -->
     <script>
-        // Cookie functions
-        function setCookie(name, value, days = 365) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
         }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for(let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
-        // Dark mode support
-        let isDarkMode = getCookie('darkMode') === 'true';
-        if (getCookie('darkMode') === null) {
-            isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        }
-        
-        function updateTheme() {
-            if (isDarkMode) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
             }
-            setCookie('darkMode', isDarkMode);
-        }
-        
-        updateTheme();
+        });
     </script>
 
     <!-- Main Game Container -->
@@ -126,13 +79,10 @@
             <div class="max-w-6xl mx-auto flex items-center justify-between">
                 <h1 class="text-3xl md:text-4xl font-bold rainbow-text">🎮 Game Hub</h1>
                 <div class="flex items-center gap-4">
-                    <div class="text-sm md:text-base font-semibold bg-nintendo-red text-white px-3 py-1 rounded-full shadow-lg">
+                    <div class="text-sm md:text-base font-semibold bg-nintendo-red text-white px-3 py-1 rounded-full">
                         Score: <span id="totalScore">0</span>
                     </div>
-                    <button id="themeToggle" class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg transition-all duration-300 hover:scale-105">
-                        🌙
-                    </button>
-                    <button id="homeBtn" class="bg-switch-gray hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105">
+                    <button id="homeBtn" class="bg-switch-gray hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
                         🏠 Home
                     </button>
                 </div>
@@ -149,80 +99,74 @@
                 </div>
 
                 <!-- Game Selection Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Reaction Game -->
-                    <div class="game-card game-button bg-gradient-to-br from-red-400 to-red-600 p-8 rounded-3xl shadow-2xl cursor-pointer hover:shadow-2xl border border-white/20" onclick="startGame('reaction')">
+                    <div class="game-button bg-gradient-to-br from-red-400 to-red-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('reaction')">
                         <div class="text-center">
-                            <div class="text-7xl mb-6 bouncy">⚡</div>
-                            <h3 class="text-2xl font-bold text-white mb-3">Lightning Reflexes</h3>
-                            <p class="text-white/90 text-lg">Test your reaction time!</p>
-                            <div class="mt-4 bg-white/20 rounded-full px-4 py-2 text-sm font-semibold">Quick Reflexes</div>
+                            <div class="text-6xl mb-4">⚡</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Lightning Reflexes</h3>
+                            <p class="text-white/80">Test your reaction time!</p>
                         </div>
                     </div>
 
                     <!-- Memory Game -->
-                    <div class="game-card game-button bg-gradient-to-br from-blue-400 to-blue-600 p-8 rounded-3xl shadow-2xl cursor-pointer hover:shadow-2xl border border-white/20" onclick="startGame('memory')">
+                    <div class="game-button bg-gradient-to-br from-blue-400 to-blue-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('memory')">
                         <div class="text-center">
-                            <div class="text-7xl mb-6 pulse-glow">🧠</div>
-                            <h3 class="text-2xl font-bold text-white mb-3">Memory Master</h3>
-                            <p class="text-white/90 text-lg">Remember the sequence!</p>
-                            <div class="mt-4 bg-white/20 rounded-full px-4 py-2 text-sm font-semibold">Brain Training</div>
+                            <div class="text-6xl mb-4">🧠</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Memory Master</h3>
+                            <p class="text-white/80">Remember the sequence!</p>
                         </div>
                     </div>
 
                     <!-- Tap Challenge -->
-                    <div class="game-card game-button bg-gradient-to-br from-green-400 to-green-600 p-8 rounded-3xl shadow-2xl cursor-pointer hover:shadow-2xl border border-white/20" onclick="startGame('tap')">
+                    <div class="game-button bg-gradient-to-br from-green-400 to-green-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('tap')">
                         <div class="text-center">
-                            <div class="text-7xl mb-6 bouncy">👆</div>
-                            <h3 class="text-2xl font-bold text-white mb-3">Tap Frenzy</h3>
-                            <p class="text-white/90 text-lg">Tap as fast as you can!</p>
-                            <div class="mt-4 bg-white/20 rounded-full px-4 py-2 text-sm font-semibold">Speed Challenge</div>
+                            <div class="text-6xl mb-4">👆</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Tap Frenzy</h3>
+                            <p class="text-white/80">Tap as fast as you can!</p>
                         </div>
                     </div>
 
                     <!-- Color Match -->
-                    <div class="game-card game-button bg-gradient-to-br from-yellow-400 to-orange-600 p-8 rounded-3xl shadow-2xl cursor-pointer hover:shadow-2xl border border-white/20" onclick="startGame('color')">
+                    <div class="game-button bg-gradient-to-br from-yellow-400 to-orange-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('color')">
                         <div class="text-center">
-                            <div class="text-7xl mb-6 float">🌈</div>
-                            <h3 class="text-2xl font-bold text-white mb-3">Color Rush</h3>
-                            <p class="text-white/90 text-lg">Match the colors quickly!</p>
-                            <div class="mt-4 bg-white/20 rounded-full px-4 py-2 text-sm font-semibold">Visual Focus</div>
+                            <div class="text-6xl mb-4">🌈</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Color Rush</h3>
+                            <p class="text-white/80">Match the colors quickly!</p>
                         </div>
                     </div>
 
                     <!-- Pattern Game -->
-                    <div class="game-card game-button bg-gradient-to-br from-purple-400 to-purple-600 p-8 rounded-3xl shadow-2xl cursor-pointer hover:shadow-2xl border border-white/20" onclick="startGame('pattern')">
+                    <div class="game-button bg-gradient-to-br from-purple-400 to-purple-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('pattern')">
                         <div class="text-center">
-                            <div class="text-7xl mb-6 pulse-glow">🔄</div>
-                            <h3 class="text-2xl font-bold text-white mb-3">Pattern Panic</h3>
-                            <p class="text-white/90 text-lg">Follow the pattern!</p>
-                            <div class="mt-4 bg-white/20 rounded-full px-4 py-2 text-sm font-semibold">Memory Chain</div>
+                            <div class="text-6xl mb-4">🔄</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Pattern Panic</h3>
+                            <p class="text-white/80">Follow the pattern!</p>
                         </div>
                     </div>
 
                     <!-- Balance Game -->
-                    <div class="game-card game-button bg-gradient-to-br from-pink-400 to-pink-600 p-8 rounded-3xl shadow-2xl cursor-pointer hover:shadow-2xl border border-white/20" onclick="startGame('balance')">
+                    <div class="game-button bg-gradient-to-br from-pink-400 to-pink-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('balance')">
                         <div class="text-center">
-                            <div class="text-7xl mb-6 float">⚖️</div>
-                            <h3 class="text-2xl font-bold text-white mb-3">Perfect Balance</h3>
-                            <p class="text-white/90 text-lg">Keep it steady!</p>
-                            <div class="mt-4 bg-white/20 rounded-full px-4 py-2 text-sm font-semibold">Precision Control</div>
+                            <div class="text-6xl mb-4">⚖️</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Perfect Balance</h3>
+                            <p class="text-white/80">Keep it steady!</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Game Screen -->
-            <div id="gameScreen" class="hidden max-w-4xl mx-auto slide-in">
-                <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20">
-                    <div class="text-center mb-8">
-                        <h2 id="gameTitle" class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-3"></h2>
-                        <p id="gameInstructions" class="text-lg text-gray-600 dark:text-gray-300 mb-6"></p>
+            <div id="gameScreen" class="hidden max-w-4xl mx-auto">
+                <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur rounded-2xl shadow-2xl p-6 md:p-8">
+                    <div class="text-center mb-6">
+                        <h2 id="gameTitle" class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2"></h2>
+                        <p id="gameInstructions" class="text-lg text-gray-600 dark:text-gray-300 mb-4"></p>
                         <div class="flex justify-center gap-6 text-lg font-semibold">
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl shadow-lg">
+                            <div class="bg-blue-500 text-white px-4 py-2 rounded-lg">
                                 Score: <span id="gameScore">0</span>
                             </div>
-                            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl shadow-lg">
+                            <div class="bg-green-500 text-white px-4 py-2 rounded-lg">
                                 Time: <span id="gameTime">30</span>s
                             </div>
                         </div>
@@ -234,9 +178,9 @@
                     </div>
 
                     <!-- Game Controls -->
-                    <div id="gameControls" class="mt-8 text-center">
-                        <button id="startGameBtn" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xl font-bold py-5 px-10 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                            🚀 Start Game!
+                    <div id="gameControls" class="mt-6 text-center">
+                        <button id="startGameBtn" class="bg-green-500 hover:bg-green-600 text-white text-xl font-bold py-4 px-8 rounded-2xl transition-colors">
+                            Start Game!
                         </button>
                     </div>
                 </div>
@@ -250,37 +194,10 @@
     </div>
 
     <script>
-        // Theme toggle functionality
-        document.addEventListener('DOMContentLoaded', () => {
-            const themeToggle = document.getElementById('themeToggle');
-            
-            function updateThemeToggle() {
-                if (themeToggle) {
-                    themeToggle.textContent = isDarkMode ? '☀️' : '🌙';
-                }
-            }
-            
-            updateThemeToggle();
-            
-            if (themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    isDarkMode = !isDarkMode;
-                    updateTheme();
-                    updateThemeToggle();
-                    
-                    // Add smooth transition effect
-                    document.body.style.transition = 'all 0.3s ease';
-                    setTimeout(() => {
-                        document.body.style.transition = '';
-                    }, 300);
-                });
-            }
-        });
-
         // Game State
         let currentGame = null;
         let gameScore = 0;
-        let totalScore = parseInt(getCookie('partyScore') || '0');
+        let totalScore = parseInt(localStorage.getItem('partyScore') || '0');
         let gameTimer = null;
         let gameTime = 30;
 
@@ -390,7 +307,7 @@
             gameTimer = null;
             
             totalScore += gameScore;
-            setCookie('partyScore', totalScore.toString());
+            localStorage.setItem('partyScore', totalScore.toString());
             document.getElementById('totalScore').textContent = totalScore;
             
             // Show end game message
