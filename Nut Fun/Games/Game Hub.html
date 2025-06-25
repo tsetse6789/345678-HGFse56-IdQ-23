@@ -153,6 +153,24 @@
                             <p class="text-white/80">Keep it steady!</p>
                         </div>
                     </div>
+
+                    <!-- Whack-a-Mole Game -->
+                    <div class="game-button bg-gradient-to-br from-amber-400 to-amber-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('whack')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🔨</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Whack-a-Mole</h3>
+                            <p class="text-white/80">Whack the moles fast!</p>
+                        </div>
+                    </div>
+
+                    <!-- Parkour Game -->
+                    <div class="game-button bg-gradient-to-br from-cyan-400 to-cyan-600 p-6 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl" onclick="startGame('parkour')">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🏃</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">Parkour Jump</h3>
+                            <p class="text-white/80">Jump over obstacles!</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -271,6 +289,16 @@
                     gameInstructions.textContent = 'Keep the bar in the center!';
                     setupBalanceGame();
                     break;
+                case 'whack':
+                    gameTitle.textContent = '🔨 Whack-a-Mole';
+                    gameInstructions.textContent = 'Hit the moles as fast as you can!';
+                    setupWhackGame();
+                    break;
+                case 'parkour':
+                    gameTitle.textContent = '🏃 Parkour Jump';
+                    gameInstructions.textContent = 'Jump over obstacles to survive!';
+                    setupParkourGame();
+                    break;
             }
             
             startBtn.onclick = () => startGameTimer();
@@ -344,6 +372,12 @@
                     break;
                 case 'balance':
                     startBalanceGame();
+                    break;
+                case 'whack':
+                    startWhackGame();
+                    break;
+                case 'parkour':
+                    startParkourGame();
                     break;
             }
         }
@@ -762,6 +796,253 @@
                 
                 updateScore();
             }, 100);
+        }
+
+        // Whack-a-Mole Game
+        let whackMoles = [];
+        let whackInterval = null;
+
+        function setupWhackGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="text-center">
+                    <div class="grid grid-cols-3 gap-4 max-w-lg mx-auto">
+                        ${Array.from({length: 9}, (_, i) => 
+                            `<div class="whack-hole relative h-24 w-24 bg-gray-700 rounded-full border-4 border-gray-800 mx-auto cursor-pointer" data-hole="${i}">
+                                <div id="mole${i}" class="mole absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-amber-600 rounded-full hidden items-center justify-center text-2xl">🐹</div>
+                            </div>`
+                        ).join('')}
+                    </div>
+                    <div id="whackStatus" class="mt-6 text-xl font-bold">Get ready to whack!</div>
+                </div>
+            `;
+        }
+
+        function startWhackGame() {
+            whackMoles = [];
+            const holes = document.querySelectorAll('.whack-hole');
+            
+            // Add click handlers to holes
+            holes.forEach((hole, index) => {
+                hole.onclick = () => whackMole(index);
+            });
+            
+            // Start spawning moles
+            whackInterval = setInterval(() => {
+                if (gameTime <= 0) {
+                    clearInterval(whackInterval);
+                    return;
+                }
+                spawnMole();
+            }, 800);
+        }
+
+        function spawnMole() {
+            // Find empty holes
+            const emptyHoles = [];
+            for (let i = 0; i < 9; i++) {
+                if (!whackMoles[i]) {
+                    emptyHoles.push(i);
+                }
+            }
+            
+            if (emptyHoles.length === 0) return;
+            
+            // Spawn mole in random empty hole
+            const holeIndex = emptyHoles[Math.floor(Math.random() * emptyHoles.length)];
+            const mole = document.getElementById(`mole${holeIndex}`);
+            
+            whackMoles[holeIndex] = true;
+            mole.classList.remove('hidden');
+            mole.classList.add('flex');
+            
+            // Mole disappears after 1.5 seconds
+            setTimeout(() => {
+                hideMole(holeIndex);
+            }, 1500);
+        }
+
+        function whackMole(holeIndex) {
+            if (whackMoles[holeIndex]) {
+                gameScore += 15;
+                updateScore();
+                
+                const mole = document.getElementById(`mole${holeIndex}`);
+                mole.style.backgroundColor = '#ef4444';
+                mole.textContent = '💥';
+                
+                setTimeout(() => {
+                    hideMole(holeIndex);
+                }, 200);
+                
+                document.getElementById('whackStatus').textContent = 'Great hit! +15 points';
+            }
+        }
+
+        function hideMole(holeIndex) {
+            const mole = document.getElementById(`mole${holeIndex}`);
+            mole.classList.add('hidden');
+            mole.classList.remove('flex');
+            mole.style.backgroundColor = '#f59e0b';
+            mole.textContent = '🐹';
+            whackMoles[holeIndex] = false;
+        }
+
+        // Parkour Game
+        let parkourPlayer = { y: 200, jumping: false, velocity: 0 };
+        let parkourObstacles = [];
+        let parkourGameLoop = null;
+        let parkourDistance = 0;
+
+        function setupParkourGame() {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = `
+                <div class="relative w-full h-80 bg-gradient-to-b from-sky-400 to-green-400 rounded-2xl overflow-hidden">
+                    <!-- Ground -->
+                    <div class="absolute bottom-0 w-full h-20 bg-green-600"></div>
+                    
+                    <!-- Player -->
+                    <div id="parkourPlayer" class="absolute w-12 h-12 text-3xl flex items-center justify-center" style="left: 50px; bottom: 80px;">🏃</div>
+                    
+                    <!-- Obstacles container -->
+                    <div id="obstaclesContainer" class="absolute bottom-20 w-full h-16"></div>
+                    
+                    <!-- Distance counter -->
+                    <div class="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-lg font-bold">
+                        Distance: <span id="parkourDistance">0</span>m
+                    </div>
+                </div>
+                
+                <div class="text-center mt-6">
+                    <button id="jumpBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-12 rounded-2xl text-xl">
+                        🦘 JUMP
+                    </button>
+                    <div id="parkourStatus" class="mt-4 text-lg font-bold">Tap JUMP to avoid obstacles!</div>
+                </div>
+            `;
+        }
+
+        function startParkourGame() {
+            parkourPlayer = { y: 200, jumping: false, velocity: 0 };
+            parkourObstacles = [];
+            parkourDistance = 0;
+            
+            const jumpBtn = document.getElementById('jumpBtn');
+            const player = document.getElementById('parkourPlayer');
+            const obstaclesContainer = document.getElementById('obstaclesContainer');
+            
+            jumpBtn.onclick = jump;
+            
+            // Add keyboard support
+            document.addEventListener('keydown', handleKeyDown);
+            
+            // Start game loop
+            parkourGameLoop = setInterval(() => {
+                if (gameTime <= 0) {
+                    clearInterval(parkourGameLoop);
+                    document.removeEventListener('keydown', handleKeyDown);
+                    return;
+                }
+                
+                updateParkourGame();
+            }, 50);
+            
+            // Spawn obstacles
+            setInterval(() => {
+                if (gameTime <= 0) return;
+                spawnObstacle();
+            }, 2000);
+        }
+
+        function handleKeyDown(e) {
+            if (e.code === 'Space' || e.key === ' ') {
+                e.preventDefault();
+                jump();
+            }
+        }
+
+        function jump() {
+            if (!parkourPlayer.jumping) {
+                parkourPlayer.jumping = true;
+                parkourPlayer.velocity = -15;
+            }
+        }
+
+        function updateParkourGame() {
+            const player = document.getElementById('parkourPlayer');
+            const obstaclesContainer = document.getElementById('obstaclesContainer');
+            
+            // Update player physics
+            if (parkourPlayer.jumping) {
+                parkourPlayer.velocity += 0.8; // gravity
+                parkourPlayer.y += parkourPlayer.velocity;
+                
+                // Land on ground
+                if (parkourPlayer.y >= 200) {
+                    parkourPlayer.y = 200;
+                    parkourPlayer.jumping = false;
+                    parkourPlayer.velocity = 0;
+                }
+            }
+            
+            // Update player position
+            player.style.bottom = `${320 - parkourPlayer.y}px`;
+            
+            // Update obstacles
+            parkourObstacles.forEach((obstacle, index) => {
+                obstacle.x -= 5;
+                const obstacleElement = document.getElementById(`obstacle${obstacle.id}`);
+                
+                if (obstacleElement) {
+                    obstacleElement.style.left = `${obstacle.x}px`;
+                    
+                    // Check collision
+                    if (obstacle.x < 90 && obstacle.x > 30 && parkourPlayer.y > 160) {
+                        // Hit obstacle - end game early
+                        gameTime = 0;
+                        document.getElementById('parkourStatus').textContent = 'You hit an obstacle! Game Over!';
+                        return;
+                    }
+                    
+                    // Remove obstacle when off screen
+                    if (obstacle.x < -50) {
+                        obstacleElement.remove();
+                        parkourObstacles.splice(index, 1);
+                        gameScore += 10;
+                        updateScore();
+                    }
+                }
+            });
+            
+            // Update distance
+            parkourDistance += 0.1;
+            document.getElementById('parkourDistance').textContent = Math.floor(parkourDistance);
+            gameScore = Math.floor(parkourDistance) + (parkourObstacles.length * 5);
+            updateScore();
+        }
+
+        function spawnObstacle() {
+            const obstacleId = Date.now();
+            const obstacle = {
+                id: obstacleId,
+                x: 800,
+                y: 200
+            };
+            
+            parkourObstacles.push(obstacle);
+            
+            const obstacleElement = document.createElement('div');
+            obstacleElement.id = `obstacle${obstacleId}`;
+            obstacleElement.className = 'absolute w-8 h-16 bg-red-600 rounded-lg';
+            obstacleElement.style.left = `${obstacle.x}px`;
+            obstacleElement.style.bottom = '0px';
+            obstacleElement.textContent = '🚧';
+            obstacleElement.style.display = 'flex';
+            obstacleElement.style.alignItems = 'center';
+            obstacleElement.style.justifyContent = 'center';
+            obstacleElement.style.fontSize = '20px';
+            
+            document.getElementById('obstaclesContainer').appendChild(obstacleElement);
         }
     </script>
 
