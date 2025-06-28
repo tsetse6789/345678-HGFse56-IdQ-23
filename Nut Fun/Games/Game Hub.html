@@ -477,6 +477,7 @@
             const reactionArea = document.getElementById('reactionArea');
             let reactionStartTime = 0;
             let waitingForGreen = false;
+            let earlyClickCount = 0;
             
             function newReactionRound() {
                 if (gameTime <= 0) return;
@@ -496,8 +497,14 @@
             
             reactionArea.onclick = () => {
                 if (waitingForGreen) {
+                    // Early click penalty - deduct increasing points
+                    earlyClickCount++;
+                    const penalty = earlyClickCount * 5; // 5, 10, 15, 20... points deducted
+                    gameScore = Math.max(0, gameScore - penalty); // Don't let score go below 0
+                    updateScore();
+                    
                     reactionArea.className = 'w-full h-64 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold cursor-pointer';
-                    reactionArea.textContent = 'Too early! Wait...';
+                    reactionArea.textContent = `Too early! -${penalty} points! Wait...`;
                     return;
                 }
                 
@@ -531,13 +538,28 @@
         function setupMemoryGame() {
             const gameContent = document.getElementById('gameContent');
             gameContent.innerHTML = `
-                <div class="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                    <button id="memBtn1" class="memory-btn h-24 bg-red-500 rounded-lg text-white font-bold text-2xl" data-color="1">1</button>
-                    <button id="memBtn2" class="memory-btn h-24 bg-blue-500 rounded-lg text-white font-bold text-2xl" data-color="2">2</button>
-                    <button id="memBtn3" class="memory-btn h-24 bg-green-500 rounded-lg text-white font-bold text-2xl" data-color="3">3</button>
-                    <button id="memBtn4" class="memory-btn h-24 bg-yellow-500 rounded-lg text-white font-bold text-2xl" data-color="4">4</button>
+                <div class="text-center mb-6">
+                    <div id="memoryStatus" class="text-2xl font-bold mb-4 min-h-16 flex items-center justify-center">Get ready...</div>
+                    <div id="memoryProgress" class="text-lg text-gray-600 dark:text-gray-300 mb-4">Round: 0 | Sequence Length: 0</div>
                 </div>
-                <div id="memoryStatus" class="text-center mt-4 text-xl font-bold">Get ready...</div>
+                <div class="grid grid-cols-2 gap-6 max-w-sm mx-auto">
+                    <button id="memBtn1" class="memory-btn relative h-28 bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 rounded-2xl text-white font-bold text-3xl shadow-lg transform transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed" data-color="1">
+                        <div class="absolute inset-0 bg-white opacity-0 rounded-2xl transition-opacity duration-300" id="flash1"></div>
+                        🔴
+                    </button>
+                    <button id="memBtn2" class="memory-btn relative h-28 bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 rounded-2xl text-white font-bold text-3xl shadow-lg transform transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed" data-color="2">
+                        <div class="absolute inset-0 bg-white opacity-0 rounded-2xl transition-opacity duration-300" id="flash2"></div>
+                        🔵
+                    </button>
+                    <button id="memBtn3" class="memory-btn relative h-28 bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 rounded-2xl text-white font-bold text-3xl shadow-lg transform transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed" data-color="3">
+                        <div class="absolute inset-0 bg-white opacity-0 rounded-2xl transition-opacity duration-300" id="flash3"></div>
+                        🟢
+                    </button>
+                    <button id="memBtn4" class="memory-btn relative h-28 bg-gradient-to-br from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 rounded-2xl text-white font-bold text-3xl shadow-lg transform transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed" data-color="4">
+                        <div class="absolute inset-0 bg-white opacity-0 rounded-2xl transition-opacity duration-300" id="flash4"></div>
+                        🟡
+                    </button>
+                </div>
             `;
         }
 
@@ -562,6 +584,7 @@
             playerSequence = [];
             
             document.getElementById('memoryStatus').textContent = `Round ${memoryRound}: Watch the sequence`;
+            document.getElementById('memoryProgress').textContent = `Round: ${memoryRound} | Sequence Length: ${memorySequence.length}`;
             
             // Disable buttons during sequence
             const buttons = document.querySelectorAll('.memory-btn');
@@ -599,12 +622,18 @@
 
         function flashMemoryButton(buttonNum) {
             const btn = document.getElementById(`memBtn${buttonNum}`);
-            btn.style.opacity = '1';
-            btn.style.transform = 'scale(1.1)';
+            const flash = document.getElementById(`flash${buttonNum}`);
+            
+            // Flash effect with white overlay
+            flash.style.opacity = '0.7';
+            btn.style.transform = 'scale(1.05)';
+            btn.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8)';
+            
             setTimeout(() => {
-                btn.style.opacity = '0.7';
+                flash.style.opacity = '0';
                 btn.style.transform = 'scale(1)';
-            }, 300);
+                btn.style.boxShadow = '';
+            }, 400);
         }
 
 
@@ -1127,14 +1156,17 @@
             // Move button handler
             moveBtn.onclick = () => {
                 if (redLightActive) {
-                    // Moved during red light - penalty!
-                    redLightPosition = Math.max(0, redLightPosition - 10);
-                    player.style.left = `${redLightPosition}%`;
-                    lightStatus.textContent = '❌ PENALTY! Go back!';
+                    // Moved during red light - game over!
+                    gameTime = 0;
+                    lightStatus.textContent = '💀 CAUGHT! Game Over!';
                     lightStatus.style.color = '#ef4444';
+                    moveBtn.disabled = true;
+                    moveBtn.style.backgroundColor = '#6b7280';
+                    clearInterval(redLightGameLoop);
                     setTimeout(() => {
-                        lightStatus.style.color = '';
-                    }, 1000);
+                        endGame();
+                    }, 1500);
+                    return;
                 } else {
                     // Moved during green light - advance!
                     redLightPosition = Math.min(85, redLightPosition + 2);
