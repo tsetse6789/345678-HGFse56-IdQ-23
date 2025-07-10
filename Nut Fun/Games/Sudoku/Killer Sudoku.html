@@ -4,7 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Killer Sudoku</title>
-    <script src="../../Hidden/Script/cdn.tailwindcss.com.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Define dark mode styles manually since we're using the pre-built CSS
+        if (!window.darkModeStylesAdded) {
+            const darkModeStyles = document.createElement('style');
+            darkModeStyles.textContent = `
+                .dark .dark\\:bg-gray-900 { background-color: #181818; }
+                .dark .dark\\:bg-gray-800 { background-color: #1f1f1f; }
+                .dark .dark\\:bg-gray-700 { background-color: #2d2d2d; }
+                .dark .dark\\:bg-gray-600 { background-color: #4a4a4a; }
+                .dark .dark\\:border-gray-700 { border-color: #4a4a4a; }
+                .dark .dark\\:border-gray-500 { border-color: #6b7280; }
+                .dark .dark\\:text-white { color: #ffffff; }
+                .dark .dark\\:text-green-400 { color: #4ade80; }
+                .dark .dark\\:text-red-400 { color: #f87171; }
+                .dark .dark\\:hover\\:bg-gray-600:hover { background-color: #4a4a4a; }
+                .dark .dark\\:text-gray-300 { color: #d1d5db; }
+                .dark .dark\\:bg-blue-950 { background-color: #172554; }
+            `;
+            document.head.appendChild(darkModeStyles);
+            window.darkModeStylesAdded = true;
+        }
+    </script>
     <style>
         :root {
             --color-primary: #5D5CDE;
