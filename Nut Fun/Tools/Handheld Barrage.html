@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handheld Barrage Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes scroll-horizontal {
+            from { transform: translateX(100%); }
+            to { transform: translateX(-100%); }
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(var(--shake-degrees)); }
+            75% { transform: rotate(calc(var(--shake-degrees) * -1)); }
+        }
+        
+        .scrolling-text {
+            animation: scroll-horizontal var(--scroll-duration) linear infinite;
+        }
+        
+        .blinking-text {
+            animation: blink 1s ease-in-out infinite;
+        }
+        
+        .shaking-text {
+            animation: shake 0.3s ease-in-out infinite;
+        }
+        
+        .scrolling-text.blinking-text {
+            animation: scroll-horizontal var(--scroll-duration) linear infinite,
+                       blink 1s ease-in-out infinite;
+        }
+        
+        .scrolling-text.shaking-text {
+            animation: scroll-horizontal var(--scroll-duration) linear infinite,
+                       shake 0.3s ease-in-out infinite;
+        }
+        
+        .scrolling-text.blinking-text.shaking-text {
+            animation: scroll-horizontal var(--scroll-duration) linear infinite,
+                       blink 1s ease-in-out infinite,
+                       shake 0.3s ease-in-out infinite;
+        }
+        
+        .static-text.blinking-text.shaking-text {
+            animation: blink 1s ease-in-out infinite,
+                       shake 0.3s ease-in-out infinite;
+        }
+        
+        .barrage-display {
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .animated-bg {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .vertical-mode {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+        
+        @keyframes scroll-vertical {
+            from { transform: translateY(100%); }
+            to { transform: translateY(-100%); }
+        }
+        
+        .vertical-mode.scrolling-text {
+            animation: scroll-vertical var(--scroll-duration) linear infinite;
+        }
+        
+        .vertical-mode.scrolling-text.blinking-text {
+            animation: scroll-vertical var(--scroll-duration) linear infinite,
+                       blink 1s ease-in-out infinite;
+        }
+        
+        .vertical-mode.scrolling-text.shaking-text {
+            animation: scroll-vertical var(--scroll-duration) linear infinite,
+                       shake 0.3s ease-in-out infinite;
+        }
+        
+        .vertical-mode.scrolling-text.blinking-text.shaking-text {
+            animation: scroll-vertical var(--scroll-duration) linear infinite,
+                       blink 1s ease-in-out infinite,
+                       shake 0.3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-300">
+    <div id="app" class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <!-- Control Panel -->
+        <div id="controlPanel" class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+            
+            <h1 class="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">Handheld Barrage Tool</h1>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 space-y-6">
+                <!-- Text Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Enter Text</label>
+                    <textarea id="textInput" 
+                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
+                        rows="3" 
+                        placeholder="Enter your barrage text here...">HELLO WORLD!</textarea>
+                </div>
+                
+                <!-- Text Size -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Text Size: <span id="textSizeValue" class="font-bold">60</span>px
+                    </label>
+                    <input type="range" id="textSize" min="20" max="200" value="60" 
+                        class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <!-- Scroll Speed -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Scroll Speed: <span id="scrollSpeedValue" class="font-bold">10</span>s
+                    </label>
+                    <input type="range" id="scrollSpeed" min="3" max="30" value="10" 
+                        class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <!-- Background Mode -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Background Mode</label>
+                    <div class="space-y-3">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="bgMode" value="colorful" checked class="mr-2">
+                            <span class="text-gray-700 dark:text-gray-300">Colorful Dynamic Background</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="bgMode" value="manual" class="mr-2">
+                            <span class="text-gray-700 dark:text-gray-300">Manual Color Selection</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Manual Color Selection -->
+                <div id="manualColors" class="hidden space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Text Color</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="color" id="textColor" value="#FFFFFF" 
+                                    class="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer">
+                                <input type="text" id="textColorHex" value="#FFFFFF" 
+                                    class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Background Color</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="color" id="bgColor" value="#000000" 
+                                    class="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer">
+                                <input type="text" id="bgColorHex" value="#000000" 
+                                    class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Orientation -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Orientation</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center justify-center p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input type="radio" name="orientation" value="horizontal" checked class="mr-2">
+                            <span class="text-gray-700 dark:text-gray-300">Horizontal</span>
+                        </label>
+                        <label class="flex items-center justify-center p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input type="radio" name="orientation" value="vertical" class="mr-2">
+                            <span class="text-gray-700 dark:text-gray-300">Vertical</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Scroll Mode -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scroll Mode</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center justify-center p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input type="radio" name="scrollMode" value="rolling" checked class="mr-2">
+                            <span class="text-gray-700 dark:text-gray-300">Auto Rolling</span>
+                        </label>
+                        <label class="flex items-center justify-center p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input type="radio" name="scrollMode" value="static" class="mr-2">
+                            <span class="text-gray-700 dark:text-gray-300">Static (Manual)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Effects -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="textBlink" class="mr-2 h-4 w-4 text-blue-600 rounded">
+                            <span class="text-gray-700 dark:text-gray-300">Enable Text Blinking</span>
+                        </label>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Text Shake Rotation: <span id="shakeAmplitudeValue" class="font-bold">0</span>°
+                        </label>
+                        <input type="range" id="shakeAmplitude" min="0" max="45" value="0" 
+                            class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+                
+                <!-- Show Barrage Button -->
+                <button id="showBarrage" 
+                    class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors text-lg shadow-lg">
+                    Show Barrage
+                </button>
+            </div>
+        </div>
+        
+        <!-- Fullscreen Barrage Display -->
+        <div id="barrageDisplay" class="barrage-display fixed inset-0 hidden z-50 flex items-center justify-center overflow-hidden">
+            <div id="barrageText" class="font-bold whitespace-nowrap"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // Get elements
+        const textInput = document.getElementById('textInput');
+        const textSize = document.getElementById('textSize');
+        const textSizeValue = document.getElementById('textSizeValue');
+        const scrollSpeed = document.getElementById('scrollSpeed');
+        const scrollSpeedValue = document.getElementById('scrollSpeedValue');
+        const manualColors = document.getElementById('manualColors');
+        const textColor = document.getElementById('textColor');
+        const textColorHex = document.getElementById('textColorHex');
+        const bgColor = document.getElementById('bgColor');
+        const bgColorHex = document.getElementById('bgColorHex');
+        const textBlink = document.getElementById('textBlink');
+        const shakeAmplitude = document.getElementById('shakeAmplitude');
+        const shakeAmplitudeValue = document.getElementById('shakeAmplitudeValue');
+        const showBarrageBtn = document.getElementById('showBarrage');
+        const barrageDisplay = document.getElementById('barrageDisplay');
+        const barrageText = document.getElementById('barrageText');
+        
+        // Update slider values
+        textSize.addEventListener('input', () => {
+            textSizeValue.textContent = textSize.value;
+        });
+        
+        scrollSpeed.addEventListener('input', () => {
+            scrollSpeedValue.textContent = scrollSpeed.value;
+        });
+        
+        shakeAmplitude.addEventListener('input', () => {
+            shakeAmplitudeValue.textContent = shakeAmplitude.value;
+        });
+        
+        // Background mode toggle
+        document.querySelectorAll('input[name="bgMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'manual') {
+                    manualColors.classList.remove('hidden');
+                } else {
+                    manualColors.classList.add('hidden');
+                }
+            });
+        });
+        
+        // Color picker sync
+        textColor.addEventListener('input', () => {
+            textColorHex.value = textColor.value.toUpperCase();
+        });
+        
+        textColorHex.addEventListener('input', () => {
+            if (/^#[0-9A-F]{6}$/i.test(textColorHex.value)) {
+                textColor.value = textColorHex.value;
+            }
+        });
+        
+        bgColor.addEventListener('input', () => {
+            bgColorHex.value = bgColor.value.toUpperCase();
+        });
+        
+        bgColorHex.addEventListener('input', () => {
+            if (/^#[0-9A-F]{6}$/i.test(bgColorHex.value)) {
+                bgColor.value = bgColorHex.value;
+            }
+        });
+        
+        // Helper function to determine if color is light or dark
+        function isColorLight(color) {
+            const hex = color.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return brightness > 155;
+        }
+        
+        // Manual scroll position for static mode
+        let scrollPosition = 0;
+        let isScrolling = false;
+        let startX = 0;
+        let startY = 0;
+        
+        // Show barrage
+        showBarrageBtn.addEventListener('click', () => {
+            const text = textInput.value || 'HELLO WORLD!';
+            const size = textSize.value;
+            const speed = scrollSpeed.value;
+            const bgMode = document.querySelector('input[name="bgMode"]:checked').value;
+            const orientation = document.querySelector('input[name="orientation"]:checked').value;
+            const scrollMode = document.querySelector('input[name="scrollMode"]:checked').value;
+            const shake = shakeAmplitude.value;
+            
+            // Set text
+            barrageText.textContent = text;
+            barrageText.style.fontSize = size + 'px';
+            
+            // Clear previous classes
+            barrageText.className = 'font-bold whitespace-nowrap';
+            barrageDisplay.className = 'barrage-display fixed inset-0 z-50 flex items-center justify-center overflow-hidden';
+            
+            // Set orientation
+            if (orientation === 'vertical') {
+                barrageText.classList.add('vertical-mode');
+            }
+            
+            // Set background and text color
+            if (bgMode === 'colorful') {
+                barrageDisplay.classList.add('animated-bg');
+                // Dynamic text color based on background
+                barrageText.style.color = '#FFFFFF';
+                barrageText.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+            } else {
+                const selectedBgColor = bgColor.value;
+                const selectedTextColor = textColor.value;
+                barrageDisplay.style.background = selectedBgColor;
+                barrageText.style.color = selectedTextColor;
+                barrageText.style.textShadow = 'none';
+            }
+            
+            // Set scroll mode
+            if (scrollMode === 'rolling') {
+                barrageText.classList.add('scrolling-text');
+                barrageText.style.setProperty('--scroll-duration', speed + 's');
+                barrageText.style.transform = '';
+            } else {
+                barrageText.classList.add('static-text');
+                scrollPosition = 0;
+                barrageText.style.transform = 'translateX(0)';
+            }
+            
+            // Set effects
+            if (textBlink.checked) {
+                barrageText.classList.add('blinking-text');
+            }
+            
+            if (shake > 0) {
+                barrageText.classList.add('shaking-text');
+                barrageText.style.setProperty('--shake-degrees', shake + 'deg');
+            }
+            
+            // Show display
+            barrageDisplay.classList.remove('hidden');
+            
+            // Request fullscreen
+            if (barrageDisplay.requestFullscreen) {
+                barrageDisplay.requestFullscreen();
+            } else if (barrageDisplay.webkitRequestFullscreen) {
+                barrageDisplay.webkitRequestFullscreen();
+            } else if (barrageDisplay.msRequestFullscreen) {
+                barrageDisplay.msRequestFullscreen();
+            }
+        });
+        
+        // Handle manual scrolling for static mode
+        barrageDisplay.addEventListener('mousedown', startDrag);
+        barrageDisplay.addEventListener('touchstart', startDrag);
+        
+        function startDrag(e) {
+            const scrollMode = document.querySelector('input[name="scrollMode"]:checked').value;
+            if (scrollMode !== 'static') return;
+            
+            isScrolling = true;
+            startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+            e.preventDefault();
+        }
+        
+        barrageDisplay.addEventListener('mousemove', drag);
+        barrageDisplay.addEventListener('touchmove', drag);
+        
+        function drag(e) {
+            if (!isScrolling) return;
+            
+            const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+            const orientation = document.querySelector('input[name="orientation"]:checked').value;
+            
+            if (orientation === 'vertical') {
+                const diffY = currentY - startY;
+                scrollPosition += diffY;
+                barrageText.style.transform = `translateY(${scrollPosition}px)`;
+                startY = currentY;
+            } else {
+                const diffX = currentX - startX;
+                scrollPosition += diffX;
+                barrageText.style.transform = `translateX(${scrollPosition}px)`;
+                startX = currentX;
+            }
+            
+            e.preventDefault();
+        }
+        
+        barrageDisplay.addEventListener('mouseup', stopDrag);
+        barrageDisplay.addEventListener('touchend', stopDrag);
+        barrageDisplay.addEventListener('mouseleave', stopDrag);
+        
+        function stopDrag() {
+            isScrolling = false;
+        }
+        
+        // Close barrage on double-click/tap or ESC
+        barrageDisplay.addEventListener('dblclick', (e) => {
+            if (e.target === barrageDisplay) {
+                closeBarrage();
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !barrageDisplay.classList.contains('hidden')) {
+                closeBarrage();
+            }
+        });
+        
+        function closeBarrage() {
+            barrageDisplay.classList.add('hidden');
+            barrageDisplay.style.background = '';
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+        
+        // Handle fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+        
+        function handleFullscreenChange() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                if (!barrageDisplay.classList.contains('hidden')) {
+                    barrageDisplay.classList.add('hidden');
+                    barrageDisplay.style.background = '';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
