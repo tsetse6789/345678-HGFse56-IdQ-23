@@ -3,7 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=https://tsetse6789.github.io/">
-    <title>Opening...</title>
+    <title>Quick Links</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .dialog {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dialog h1 {
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .link-grid {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .link-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .link-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .link-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .link-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .link-card:active {
+            transform: translateY(0);
+        }
+
+        .link-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+        }
+
+        .link-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 6px;
+            line-height: 1.2;
+        }
+
+        .link-description {
+            font-size: 0.875rem;
+            color: #718096;
+            line-height: 1.4;
+        }
+
+        .footer {
+            text-align: center;
+            color: #718096;
+            font-size: 0.875rem;
+        }
+
+        .footer-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .dialog {
+                padding: 30px 25px;
+            }
+            
+            .dialog h1 {
+                font-size: 1.25rem;
+                margin-bottom: 25px;
+            }
+            
+            .link-card {
+                padding: 18px;
+            }
+            
+            .link-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .link-card {
+                transition: none;
+            }
+            
+            .link-card:hover {
+                transform: none;
+            }
+        }
+    </style>
 </head>
+<body>
+    <div class="dialog">
+        <h1>Which one would like to go?</h1>
+        <div id="linkGrid" class="link-grid">
+            <!-- Links will be populated by JavaScript -->
+        </div>
+        <div class="footer">
+            Choose a destination to continue
+        </div>
+    </div>
+
+    <script>
+        const links = [
+            {
+                name: "Web Menu",
+                url: "https://tsetse6789.github.io",
+                description: "Main Menu",
+                icon: "🔗"
+            },
+            {
+                name: "Account Console",
+                url: "https://tsetse6789.github.io/account",
+                description: "Manage your Nut Fun account",
+                icon: "👤"
+            },
+            {
+                name: "AIML Editor",
+                url: "https://tsetse6789.github.io/aiml/editor",
+                description: "Manage your App Information Markup Language files",
+                icon: "🔨"
+            },
+            {
+                name: "Fun Chat",
+                url: "https://tsetse6789.github.io/chat",
+                description: "Chat with your friends instantly",
+                icon: "💬"
+            },
+            {
+                name: "YouTube Player",
+                url: "https://tsetse6789.github.io/player",
+                description: "Play videos with ad-less, smooth experience",
+                icon: "▷"
+            },
+            {
+                name: "App Market",
+                url: "https://tsetse6789.github.io/store",
+                description: "Find, preview and download apps",
+                icon: "📱"
+            },
+            {
+                name: "Werewolf Host",
+                url: "https://tsetse6789.github.io/other/games/ove5X1dtmkrKvixAjG9w1XOB.html",
+                description: "Play Werewolf without a human host",
+                icon: "🐺"
+            }
+        ];
+
+        function createLinkCard(link) {
+            return `
+                <a href="${link.url}" target="_blank" class="link-card" rel="noopener noreferrer">
+                    <div class="link-icon">${link.icon}</div>
+                    <div class="link-title">${link.name}</div>
+                    <div class="link-description">${link.description}</div>
+                </a>
+            `;
+        }
+
+        function populateLinks() {
+            const linkGrid = document.getElementById('linkGrid');
+            linkGrid.innerHTML = links.map(createLinkCard).join('');
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            const linkCards = document.querySelectorAll('.link-card');
+            const currentFocus = document.activeElement;
+            const currentIndex = Array.from(linkCards).indexOf(currentFocus);
+            
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % linkCards.length;
+                linkCards[nextIndex].focus();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const prevIndex = currentIndex <= 0 ? linkCards.length - 1 : currentIndex - 1;
+                linkCards[prevIndex].focus();
+            }
+        });
+
+        // Initialize
+        populateLinks();
+        
+        // Focus first link for accessibility
+        setTimeout(() => {
+            const firstLink = document.querySelector('.link-card');
+            if (firstLink) firstLink.focus();
+        }, 100);
+    </script>
+</body>
 </html>
